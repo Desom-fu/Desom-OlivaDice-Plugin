@@ -613,7 +613,6 @@ def unity_reply(plugin_event, Proc):
 
 def format_long_dice_rolls(detail_string):
     """
-    一个新的辅助函数，用于优化显示效果。
     当每一次掷骰细节超过50个时，花括号内只显示第一个和最后一个，中间用+...+来表示。
     """
     # 确保处理的是字符串类型
