@@ -1,0 +1,18 @@
+{
+    "name" : "OlivaDice阴阳模块",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDiceTaichi",
+    "message_mode" : "old_string",
+    "info" : "本模块为OlivaDice的阴阳模块，实现了阴阳规则的功能。",
+    "version" : "1.0.0",
+    "svn" : 20,
+    "compatible_svn" : 101,
+    "priority" : 19980,
+    "support" : [
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

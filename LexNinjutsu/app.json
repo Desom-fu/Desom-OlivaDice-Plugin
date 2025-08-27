@@ -1,0 +1,23 @@
+{
+    "name" : "吓我一跳我释放忍术！",
+    "author" : "Desom-fu",
+    "namespace" : "LexNinjutsu",
+    "info" : "释放忍术插件，具有完备的管理系统（前置：OlivaDiceCore）",
+    "priority" : 30000,
+    "svn" : 1,
+    "version" : "1.5.0",
+    "compatible_svn" : 100,
+    "message_mode" : "olivos_string",
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        },
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

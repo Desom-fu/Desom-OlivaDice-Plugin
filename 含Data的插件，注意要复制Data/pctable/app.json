@@ -1,0 +1,22 @@
+{
+    "name" : "pc表格",
+    "author" : "Desom-fu",
+    "namespace" : "pctable",
+    "info" : "源json作者：菜菜\n素材来自微博@表酱紫好吗 ，作者见图中署名。整理者菜菜（2471459714）\n使用方法：输入[pc表格]",
+    "priority" : 30000,
+    "svn" : "0.0.1",
+    "compatible_svn" : 100,
+    "message_mode" : "olivos_string",
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        },
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

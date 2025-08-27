@@ -1,0 +1,18 @@
+{
+    "name" : "OlivaDicePuke",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDicePuke",
+    "message_mode" : "old_string",
+    "info" : "为无光白狐能力特意写的一个模块",
+    "version" : "0.0.1",
+    "svn" : 20,
+    "compatible_svn" : 101,
+    "priority" : 19995,
+    "support" : [
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

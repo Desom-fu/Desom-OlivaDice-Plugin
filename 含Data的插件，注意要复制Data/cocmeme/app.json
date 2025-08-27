@@ -1,0 +1,22 @@
+{
+    "name" : "跑团梗图",
+    "author" : "Desom-fu",
+    "namespace" : "cocmeme",
+    "info" : "一些关于跑团梗图的随机抽取，图包来源于：烟雨咸鱼，使用方法：输入[cocmeme]或输入[跑团梗图]",
+    "priority" : 30000,
+    "svn" : "0.0.1",
+    "compatible_svn" : 100,
+    "message_mode" : "olivos_string",
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        },
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

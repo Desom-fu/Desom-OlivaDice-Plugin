@@ -1,0 +1,18 @@
+{
+    "name" : "OlivaDice排序生成COC角色卡",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDiceSortCOC",
+    "message_mode" : "old_string",
+    "info" : "OlivaDice排序生成COC角色卡，合并转发发送",
+    "version" : "0.0.1",
+    "svn" : 20,
+    "compatible_svn" : 101,
+    "priority" : 19980,
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        }
+    ]
+}

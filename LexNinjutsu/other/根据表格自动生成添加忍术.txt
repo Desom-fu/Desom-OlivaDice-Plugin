@@ -1,0 +1,50 @@
+根据表格自动生成添加忍术的的东西，直接把下面代码放进单元格里面就能自动计算
+
+忍术名称	类型/派系/属性	忍术等级	蕾克拉消耗/使用次数	出手速度	距离	强度	伤害	力量对拼	特效	说明
+影分身十字斩	攻击/刀·影·分身/无	C	50	1	3	2d6	2 + 2d6	否		
+
+注意忍术要在第二行，按上面的格式来
+
+特效/说明没有动，里面的表达式要自行添加<>
+
+=TEXTJOIN("", TRUE,
+    ".添加忍术  ", A2,
+    "|", C2,
+    "|类型/派系/属性：", B2,
+    "\n",
+    IF(ISNUMBER(SEARCH("次", D2)), "使用次数：" & D2, "蕾克拉消耗：" & IF(ISNUMBER(SEARCH("/", D2)), LEFT(D2, FIND("/", D2)-1), D2)),
+    
+    "\n出手速度：", 
+    IF(OR(E2="", E2="-", E2="∞"), E2, SUBSTITUTE(E2, " ", "")),
+    
+    "\n距离：", 
+    IF(OR(F2="", F2="-", F2="∞"), F2, SUBSTITUTE(F2, " ", "")),
+    
+    IF(ISNUMBER(SEARCH("/", G2)),
+        "\n通灵兽属性：" & 
+        IF(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 1 * 100-99, 100))="-", "-", "生命" & TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 1 * 100-99, 100))) & 
+        IF(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 2 * 100-99, 100))="-", "/-", "/出手速度<" & UPPER(SUBSTITUTE(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 2 * 100-99, 100)), " ", "")) & "+{忍术技艺}>") & 
+        IF(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 3 * 100-99, 100))="-", "/-", "/强度<" & UPPER(SUBSTITUTE(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 3 * 100-99, 100)), " ", "")) & "+1D20+{忍术技艺}>") & 
+        IF(TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 4 * 100-99, 100))="-", "/-", "/回合数" & TRIM(MID(SUBSTITUTE(G2, "/", REPT(" ", 100)), 4 * 100-99, 100))),
+        
+        IF(NOT(OR(G2="", G2="-")), 
+            IF(ISNUMBER(SEARCH("回合", G2)), 
+                "\n强度：" & G2,
+                IF(TRIM(RIGHT(SUBSTITUTE(B2, "/", REPT(" ", 100)), 100))="回复",
+                    "\n强度：<" & UPPER(SUBSTITUTE(G2, " ", "")) & ">",
+                    "\n$tStr=<" & UPPER(SUBSTITUTE(G2, " ", "")) & "+1D20>$\n强度：<{tStr}+{忍术技艺}>\n或 <{tStr}+{蛮力}>"
+                )
+            ),
+            ""
+        )
+    ),
+    
+    "\n伤害：", 
+    IF(OR(H2="", H2="-", H2="∞"), H2,
+        "<" & UPPER(SUBSTITUTE(H2, " ", "")) & "+{" & IF(I2="是", "蛮力", "忍术技艺") & "}>"
+    ),
+    
+    "\n力量对拼：", I2,
+    "\n特效：", IF(J2="", "无", J2),
+    "\n说明：", IF(K2="", "无", K2)
+)

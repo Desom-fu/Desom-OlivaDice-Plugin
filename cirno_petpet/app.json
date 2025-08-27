@@ -1,0 +1,18 @@
+{
+    "name": "摸头",
+    "author": "nullkun",
+    "namespace": "cirno_petpet",
+    "message_mode": "old_string",
+    "info": "摸头摸头摸摸头",
+    "version": "0.0.1",
+    "svn": 1,
+    "priority": 19990,
+    "compatible_svn": 100,
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        }
+    ]
+}

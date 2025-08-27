@@ -1,0 +1,18 @@
+{
+    "name" : "OlivaDice狩魂者模块",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDiceShouHun",
+    "message_mode" : "old_string",
+    "info" : "本模块为OlivaDice的狩魂者模块，提供了狩魂者相关指令。",
+    "version" : "1.4.1",
+    "svn" : 20,
+    "compatible_svn" : 101,
+    "priority" : 19990,
+    "support" : [
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

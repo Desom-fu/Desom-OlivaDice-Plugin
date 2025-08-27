@@ -1,0 +1,87 @@
+{
+    "LEXNINJA": {
+        "mainDice": "1D20",
+        "customDefault": {
+            "d": {
+                "leftD": 1,
+                "rightD": 20,
+                "sub": {
+                    "k": null,
+                    "q": null,
+                    "p": null,
+                    "b": null
+                },
+                "subD": {
+                    "p": 1,
+                    "b": 1
+                }
+            }
+        },
+        "skill": {
+            "属性": [
+                "HP",
+                "HPMAX",
+                "MP",
+                "MPMAX",
+                "LEVEL",
+                "EXP"
+            ],
+            "技艺": [
+                "身手",
+                "速度",
+                "侦察",
+                "潜行",
+                "忍术技艺",
+                "蛮力"                
+            ]
+        },
+        "skillConfig": {
+            "skipEnhance": []
+        },
+        "init": {},
+        "synonyms":{
+            "HP": ["生命","HP"],
+            "HPMAX": ["生命上限","HPMAX"],
+            "MP": ["蕾克拉","MP"],
+            "MPMAX": ["蕾克拉上限","MPMAX"],
+            "LEVEL": ["等级","LEVEL"],
+            "EXP": ["经验","EXP"],
+            "身手": ["身手","身"],
+            "速度": ["速度","速"],
+            "侦察": ["侦察","侦查","侦"],
+            "潜行": ["潜行","潜"],
+            "忍术技艺": ["忍术技艺","忍术","忍","技艺"],
+            "蛮力": ["蛮力","蛮"]
+        },
+        "showName": {
+            "HP": "生命",
+            "HPMAX": "生命上限",
+            "MP": "蕾克拉",
+            "MPMAX": "蕾克拉上限",
+            "LEVEL": "等级",
+            "EXP": "经验"
+        },
+        "defaultSkillValue": {},
+        "checkRules": {
+            "default": {
+                "checkList": []
+            },
+            "LEXNINJA": {
+                "checkList": [
+                    "greatSuccess",
+                    "greatFail"
+                ],
+                "greatSuccess": {
+                    ".>=": ["$roll", 20]
+                },
+                "greatFail": {
+                    ".<=": ["$roll", 1]
+                }
+            }
+        }
+    }
+}							
+								
+								
+								
+								

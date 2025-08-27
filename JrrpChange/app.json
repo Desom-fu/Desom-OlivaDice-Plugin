@@ -1,0 +1,18 @@
+{
+    "name" : "Jrrp自定义文案",
+    "author" : "Desom-fu",
+    "namespace" : "JrrpChange",
+    "message_mode" : "old_string",
+    "info" : "jrrp模块加强，覆盖原来的jrrp，支持自定义文案",
+    "version" : "0.0.1",
+    "svn" : 20,
+    "compatible_svn" : 101,
+    "priority" : 19995,
+    "support" : [
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}
