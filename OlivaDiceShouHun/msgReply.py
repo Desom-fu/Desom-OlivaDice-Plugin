@@ -537,6 +537,8 @@ def unity_reply(plugin_event, Proc):
             success_level = max(0, success_level)
             
             # 构建回复
+            front_detail = format_long_dice_rolls(front_detail)
+            back_detail = format_long_dice_rolls(back_detail)
             dictTValue['tFrontResult'] = front_detail
             dictTValue['tBackResult'] = back_detail
             dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
@@ -609,6 +611,25 @@ def unity_reply(plugin_event, Proc):
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShResult'], dictTValue)
                     replyMsg(plugin_event, tmp_reply_str)
 
+def format_long_dice_rolls(detail_string):
+    """
+    一个新的辅助函数，用于优化显示效果。
+    当每一次掷骰细节超过50个时，花括号内只显示第一个和最后一个，中间用+...+来表示。
+    """
+    # 确保处理的是字符串类型
+    if not isinstance(detail_string, str):
+        return detail_string
+
+    def replacer(match):
+        # 获取花括号内的完整内容，例如 "2+1+1+..."
+        content = match.group(1)
+        rolls = content.split('+')
+        if len(rolls) > 50:
+            return f"{{{rolls[0]}+...+{rolls[-1]}}}"
+        else:
+            return match.group(0)
+    return re.sub(r'\{([^\}]+)\}', replacer, detail_string)
+
 def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
     """
     使用 getExpression 函数替换技能名，并将 0dX 替换为 0
@@ -633,7 +654,7 @@ def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
         ruleMode='default'
     )
     if expr_show != expr_show_2:
-        processed_detail = processed_expr,
+        processed_detail = processed_expr
     replaced_expr = processed_expr
     replaced_detail = processed_detail
     # 处理 getExpression 的特殊格式（如 {技能名}）
