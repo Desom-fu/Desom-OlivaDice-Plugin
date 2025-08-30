@@ -192,14 +192,13 @@ def send_reaction_v3(plugin_event, server_config, message_id, reaction_code):
 def send_reactions(plugin_event, server_config, message_id, reaction_codes):
     """尝试发送多个表情，自动尝试三种API接口"""
     for code in reaction_codes:
-        ok = False
-        ok = send_reaction_v1(plugin_event, server_config, message_id, code)
-        if not ok:
-            ok = send_reaction_v2(plugin_event, server_config, message_id, code)
-            if not ok:
-                ok = send_reaction_v3(plugin_event, server_config, message_id, code)
-        if not ok:
-            return False
+        if send_reaction_v1(plugin_event, server_config, message_id, code):
+            continue
+        if send_reaction_v2(plugin_event, server_config, message_id, code):
+            continue
+        if send_reaction_v3(plugin_event, server_config, message_id, code):
+            continue
+        return False
     return True
 
 def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str):
