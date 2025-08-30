@@ -220,7 +220,7 @@ def send_reactions(plugin_event, server_config, message_id, reaction_codes):
     return True
 
 def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str):
-    """处理骰骰主管理命令"""
+    """处理骰主管理命令"""
     replyMsg = OlivaDiceCore.msgReply.replyMsg
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
     getMatchWordStartRight = OlivaDiceCore.msgReply.getMatchWordStartRight
