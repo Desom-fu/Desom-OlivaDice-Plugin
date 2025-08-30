@@ -284,7 +284,7 @@ def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str)
             qq_id = parts[0].strip()
             emojis = parts[1].strip().split()
             
-            if qq_id and emojis:
+            if qq_id and emojis and qq_id in config["target_users"]:
                 config["target_users"][qq_id].extend(emojis)
                 save_json_file(CONFIG_FILE, config)
                 replyMsg(plugin_event, f"已为用户 {qq_id} 添加表情: {' '.join(emojis)}")
