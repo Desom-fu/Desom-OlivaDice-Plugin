@@ -18,6 +18,7 @@ DATA_PATH = "plugin/data/AutoReaction"
 # 配置文件路径
 CONFIG_FILE = os.path.join(DATA_PATH, "config.json")
 WHITELIST_FILE = os.path.join(DATA_PATH, "whitelist.json")
+PROTOCOL_FILE = os.path.join(DATA_PATH, "protocol.json")  # 新增协议配置文件
 
 def ensure_data_dir():
     """确保数据目录存在"""
@@ -58,6 +59,12 @@ def unity_init(plugin_event, Proc):
             "whitelist_groups": []
         }
         save_json_file(WHITELIST_FILE, default_whitelist)
+    # 初始化协议文件
+    if not os.path.exists(PROTOCOL_FILE):
+        default_protocol = {
+            "protocol": 1  # 默认使用Lagrange协议
+        }
+        save_json_file(PROTOCOL_FILE, default_protocol)
 
 def data_init(plugin_event, Proc):
     """数据初始化"""
@@ -92,6 +99,10 @@ def get_account_config(plugin_event):
         print(f"读取账号配置失败: {e}")
         return None
 
+def get_protocol():
+    """获取当前使用的协议"""
+    protocol_data = load_json_file(PROTOCOL_FILE)
+    return protocol_data.get("protocol", 1)  # 默认为1
 
 def send_reaction_v1(plugin_event, server_config, message_id, reaction_code):
     """Lagrange表情API接口: /set_group_reaction"""
@@ -159,7 +170,7 @@ def send_reaction_v2(plugin_event, server_config, message_id, reaction_code):
         return False
 
 def send_reaction_v3(plugin_event, server_config, message_id, reaction_code):
-    """LLob表情API接口: /set_msg_emoji_like (字符串ID)"""
+    """LLOneBot表情API接口: /set_msg_emoji_like (字符串ID)"""
     forward_data = {
         "Type": "Http",
         "Host": server_config["host"].replace("http://", "").replace("https://", ""),
@@ -190,19 +201,26 @@ def send_reaction_v3(plugin_event, server_config, message_id, reaction_code):
         return False
 
 def send_reactions(plugin_event, server_config, message_id, reaction_codes):
-    """尝试发送多个表情，自动尝试三种API接口"""
+    """根据设置的协议发送表情"""
+    protocol = get_protocol()
     for code in reaction_codes:
-        if send_reaction_v1(plugin_event, server_config, message_id, code):
-            continue
-        if send_reaction_v2(plugin_event, server_config, message_id, code):
-            continue
-        if send_reaction_v3(plugin_event, server_config, message_id, code):
-            continue
-        return False
+        if protocol == 1:
+            if not send_reaction_v1(plugin_event, server_config, message_id, code):
+                return False
+        elif protocol == 2:
+            if not send_reaction_v2(plugin_event, server_config, message_id, code):
+                return False
+        elif protocol == 3:
+            if not send_reaction_v3(plugin_event, server_config, message_id, code):
+                return False
+        else:
+            # 默认使用协议1
+            if not send_reaction_v1(plugin_event, server_config, message_id, code):
+                return False
     return True
 
 def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str):
-    """处理骰主管理命令"""
+    """处理骰骰主管理命令"""
     replyMsg = OlivaDiceCore.msgReply.replyMsg
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
     getMatchWordStartRight = OlivaDiceCore.msgReply.getMatchWordStartRight
@@ -211,6 +229,35 @@ def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str)
     # 加载配置
     config = load_json_file(CONFIG_FILE)
     whitelist = load_json_file(WHITELIST_FILE)
+    
+    # 设置协议
+    if isMatchWordStart(tmp_reast_str, ['回应设置协议'], isCommand=True):
+        tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['回应设置协议'])
+        tmp_reast_str = skipSpaceStart(tmp_reast_str)
+        
+        if not tmp_reast_str.strip():
+            # 显示当前协议选项
+            replyMsg(plugin_event, 
+                "当前支持的协议:\n"
+                "1：Lagrange\n"
+                "2：NapCat\n"
+                "3：LLOneBot/LLTwoBot\n\n"
+                "当前使用的协议: " + str(get_protocol()) + "\n"
+                "请输入 .回应设置协议 对应序号 来设置对应的协议"
+            )
+            return True
+        
+        try:
+            protocol_num = int(tmp_reast_str.strip())
+            if protocol_num in [1, 2, 3]:
+                protocol_data = {"protocol": protocol_num}
+                save_json_file(PROTOCOL_FILE, protocol_data)
+                replyMsg(plugin_event, f"已设置使用协议 {protocol_num}")
+            else:
+                replyMsg(plugin_event, "协议序号无效，请输入1、2或3")
+        except ValueError:
+            replyMsg(plugin_event, "请输入有效的协议序号(1、2或3)")
+        return True
     
     # 添加白名单群组
     if isMatchWordStart(tmp_reast_str, ['回应添加白名单群组'], isCommand=True):
@@ -320,8 +367,14 @@ def handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str)
     if isMatchWordStart(tmp_reast_str, ['回应查看配置'], isCommand=True):
         whitelist_groups = "\n".join(whitelist["whitelist_groups"]) or "无"
         target_users = "\n".join([f"{k}: {' '.join(v)}" for k, v in config["target_users"].items()]) or "无"
+        current_protocol = get_protocol()
         
-        replyMsg(plugin_event, f"白名单群组:\n{whitelist_groups}\n\n目标用户及表情:\n{target_users}")
+        replyMsg(plugin_event, 
+            f"白名单群组:\n{whitelist_groups}\n\n"
+            f"目标用户及表情:\n{target_users}\n\n"
+            f"当前使用的协议: {current_protocol}\n"
+            f"(1：Lagrange, 2：NapCat, 3：LLOneBot/LLTwoBot)"
+        )
         return True
     
     return False
@@ -453,7 +506,7 @@ def unity_reply(plugin_event, Proc):
             return
 
     def is_master(plugin_event):
-        """检查是否是骰主"""
+        """检查是否是骰骰主"""
         return OlivaDiceCore.ordinaryInviteManager.isInMasterList(
             plugin_event.bot_info.hash,
             OlivaDiceCore.userConfig.getUserHash(
@@ -463,7 +516,7 @@ def unity_reply(plugin_event, Proc):
             )
         )
     
-    # 处理骰主命令
+    # 处理骰骰主命令
     if flag_is_command and is_master(plugin_event):
         if handle_admin_command(plugin_event, dictTValue, dictStrCustom, tmp_reast_str):
             plugin_event.set_block()
