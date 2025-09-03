@@ -26,9 +26,10 @@ dictTValue = {
 }
 
 dictStrCustomNote = {
-    'jrlpFirst': '首次抽取今日老婆',
-    'jrlpRepeat': '重复查看今日老婆',
-    'jrlpRobot': '抽到机器人自己'
+    'jrlpFirst': '【今日老婆】\n首次抽取今日老婆',
+    'jrlpRepeat': '【今日老婆】\n重复查看今日老婆',
+    'jrlpSelf': '【今日老婆】\n抽到自己',
+    'jrlpRobot': '【今日老婆】\n抽到机器人自己'
 }
 
 dictHelpDocTemp = {
