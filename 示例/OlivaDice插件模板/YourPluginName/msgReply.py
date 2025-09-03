@@ -27,12 +27,18 @@ def unity_reply(plugin_event, Proc):
     dictTValue.update(dictGValue)
     dictTValue = OlivaDiceCore.msgCustomManager.dictTValueInit(plugin_event, dictTValue)
 
-    replyMsg = OlivaDiceCore.msgReply.replyMsg  
+    valDict = {}
+    valDict['dictTValue'] = dictTValue
+    valDict['dictStrCustom'] = dictStrCustom
+    valDict['tmp_platform'] = plugin_event.platform['platform']
+
+    replyMsg = OlivaDiceCore.msgReply.replyMsg
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
     getMatchWordStartRight = OlivaDiceCore.msgReply.getMatchWordStartRight
     skipSpaceStart = OlivaDiceCore.msgReply.skipSpaceStart
     skipToRight = OlivaDiceCore.msgReply.skipToRight
     msgIsCommand = OlivaDiceCore.msgReply.msgIsCommand
+    to_half_width = OlivaDiceCore.msgReply.to_half_width
 
     tmp_at_str = OlivOS.messageAPI.PARA.at(plugin_event.base_info['self_id']).CQ()
     tmp_at_str_sub = None
@@ -43,6 +49,7 @@ def unity_reply(plugin_event, Proc):
     tmp_command_str_2 = '。'
     tmp_command_str_3 = '/'
     tmp_reast_str = plugin_event.data.message
+    tmp_reast_str = to_half_width(tmp_reast_str)
     flag_force_reply = False
     flag_is_command = False
     flag_is_from_host = False
@@ -71,7 +78,20 @@ def unity_reply(plugin_event, Proc):
         OlivaDiceCore.crossHook.dictHookList['prefix']
     )
     if flag_is_command:
+        tmp_hostID = None
         tmp_hagID = None
+        tmp_userID = plugin_event.data.user_id
+        valDict['tmp_userID'] = tmp_userID
+        tmp_list_hit = []
+        flag_is_from_master = OlivaDiceCore.ordinaryInviteManager.isInMasterList(
+            plugin_event.bot_info.hash,
+            OlivaDiceCore.userConfig.getUserHash(
+                plugin_event.data.user_id,
+                'user',
+                plugin_event.platform['platform']
+            )
+        )
+        valDict['flag_is_from_master'] = flag_is_from_master
         if plugin_event.plugin_info['func_type'] == 'group_message':
             if plugin_event.data.host_id != None:
                 flag_is_from_host = True
