@@ -20,27 +20,12 @@ import OlivaDiceCore
 import hashlib
 import time
 import traceback
+import json
+import os
 from functools import wraps
 import copy
 
-def get_luck_text(luck_num):
-    luck_dict = {
-        1: "哇哦，大成功诶！但是这不是coc，祝你好运！",
-        (2, 10): "三军听令，自刎归天！",
-        (11, 15): "质疑。唉我真的是服了，天天今日人品这么差劲。",
-        16: "抽的好！奖励你去到处都是果冻的塔进行劲爆路线解密！",
-        (17, 30): "质疑。唉我真的是服了，天天今日人品这么差劲。",
-        (31, 50): "O-O 小芙能有什么坏心眼呢？",
-        (51, 65): "超过一半了，或许今天运气还不错？",
-        66: "抽的好！奖励你蹲着跑去LXVI和一堆圆刺激情碰撞！",
-        (67, 70): "超过一半了，或许今天的运气还不错？",
-        (71, 73): "没准今天你能出个金草莓或者过一个榜图？",
-        74: "抽的好！奖励你跑到全是咖啡跳的无名旅馆和冰球斗智斗勇！",
-        (75, 90): "没准今天你能出个金草莓或者过一个榜图？",
-        (91, 99): "快去抽卡吧，奇想盲盒和600草莓在等着你！",
-        100: "哇哦，100诶！那你一定能一把理论测试如果Y PP毕加索 秒杀大屠杀 AP+脆肚！"
-    }
-
+def get_luck_text(luck_num, luck_dict):
     # 默认运势文本
     luck_text = "不可能有这条消息，你升桂了！"
     # 查找匹配的运势文本
@@ -59,7 +44,53 @@ def unity_init(plugin_event, Proc):
     pass
 
 def data_init(plugin_event, Proc):
-    pass
+    # 初始化运势文本json文件
+    jrrp_text_path = os.path.join('plugin', 'data', 'jrrpChange')
+    if not os.path.exists(jrrp_text_path):
+        os.makedirs(jrrp_text_path)
+    
+    json_path = os.path.join(jrrp_text_path, 'luck_text.json')
+    
+    # 默认运势字典
+    default_luck_dict = {
+        "1": "哇哦，大成功诶！但是这不是coc，祝你好运！",
+        "2-10": "三军听令，自刎刎归天！",
+        "11-15": "质疑。唉我真的是服了，天天今日人品这么差劲。",
+        "16": "抽的好！奖励你去到处都是果冻的塔进行劲爆路线解密！",
+        "17-30": "质疑。唉我真的是服了，天天今日人品这么差劲。",
+        "31-50": "O-O 小芙能有什么坏心眼呢？",
+        "51-65": "超过一半了，或许今天运气还不错？",
+        "66": "抽的好！奖励你蹲着跑去LXVI和一堆圆刺激情碰撞！",
+        "67-70": "超过一半了，或许今天的运气还不错？",
+        "71-73": "没准今天你能出个金草莓或者过一个榜图？",
+        "74": "抽的好！奖励你跑到全是咖啡跳的无名旅馆和冰球斗智斗勇！",
+        "75-90": "没准今天你能出个金草莓或者过一个榜图？",
+        "91-99": "快去抽卡吧，奇想盲盒和600草莓在等着你！",
+        "100": "哇哦，100诶！那你一定能一把理论测试如果Y PP毕加索 秒杀大屠杀 AP+脆肚！"
+    }
+    
+    # 如果json文件不存在，则创建并写入默认值
+    if not os.path.exists(json_path):
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(default_luck_dict, f, ensure_ascii=False, indent=4)
+
+def load_luck_dict():
+    json_path = os.path.join('plugin', 'data', 'jrrpChange', 'luck_text.json')
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            raw_luck_dict = json.load(f)
+        # 转换键格式为代码可用的形式
+        luck_dict = {}
+        for key, value in raw_luck_dict.items():
+            if '-' in key:
+                start, end = map(int, key.split('-'))
+                luck_dict[(start, end)] = value
+            else:
+                luck_dict[int(key)] = value
+                
+        return luck_dict
+    except:
+        return {}
 
 def poke_jrrp(plugin_event, Proc):
     replyMsg = OlivaDiceCore.msgReply.replyMsg
@@ -104,7 +135,8 @@ def poke_jrrp(plugin_event, Proc):
         hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime())).encode(encoding='UTF-8'))
         hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
         tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-        tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int))
+        luck_dict = load_luck_dict()
+        tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
         dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
         dictTValue['tJrrpText'] = tmp_jrrp_reply
         tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyJrrp'], dictTValue)
@@ -243,7 +275,8 @@ def unity_reply(plugin_event, Proc):
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime())).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int))
+            luck_dict = load_luck_dict()
+            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
             tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyJrrp'], dictTValue)
@@ -260,10 +293,11 @@ def unity_reply(plugin_event, Proc):
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.localtime())) - 24 * 60 * 60))).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int))
+            luck_dict = load_luck_dict()
+            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
-            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyJrrp'], dictTValue)
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyZrrp'], dictTValue)
             if tmp_reply_str != None:
                 replyMsg(plugin_event, tmp_reply_str)
                 plugin_event.set_block()
@@ -277,10 +311,11 @@ def unity_reply(plugin_event, Proc):
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.localtime())) + 24 * 60 * 60))).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int))
+            luck_dict = load_luck_dict()
+            tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
-            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyJrrp'], dictTValue)
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strJoyMrrp'], dictTValue)
             if tmp_reply_str != None:
                 replyMsg(plugin_event, tmp_reply_str)
                 plugin_event.set_block()
