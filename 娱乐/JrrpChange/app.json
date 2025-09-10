@@ -4,7 +4,7 @@
     "namespace" : "JrrpChange",
     "message_mode" : "old_string",
     "info" : "jrrp模块加强，覆盖原来的jrrp，支持自定义文案",
-    "version" : "0.0.1",
+    "version" : "0.0.2",
     "svn" : 20,
     "compatible_svn" : 101,
     "priority" : 19995,
