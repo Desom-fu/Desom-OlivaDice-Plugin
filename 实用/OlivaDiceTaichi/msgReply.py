@@ -40,6 +40,11 @@ def unity_reply(plugin_event, Proc):
     dictTValue.update(dictGValue)
     dictTValue = OlivaDiceCore.msgCustomManager.dictTValueInit(plugin_event, dictTValue)
 
+    valDict = {}
+    valDict['dictTValue'] = dictTValue
+    valDict['dictStrCustom'] = dictStrCustom
+    valDict['tmp_platform'] = plugin_event.platform['platform']
+
     replyMsg = OlivaDiceCore.msgReply.replyMsg
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
     getMatchWordStartRight = OlivaDiceCore.msgReply.getMatchWordStartRight
@@ -56,6 +61,7 @@ def unity_reply(plugin_event, Proc):
     tmp_command_str_2 = '。'
     tmp_command_str_3 = '/'
     tmp_reast_str = plugin_event.data.message
+    tmp_reast_str = OlivaDiceCore.msgReply.to_half_width(tmp_reast_str)
     flag_force_reply = False
     flag_is_command = False
     flag_is_from_host = False
@@ -84,7 +90,20 @@ def unity_reply(plugin_event, Proc):
         OlivaDiceCore.crossHook.dictHookList['prefix']
     )
     if flag_is_command:
+        tmp_hostID = None
         tmp_hagID = None
+        tmp_userID = plugin_event.data.user_id
+        valDict['tmp_userID'] = tmp_userID
+        tmp_list_hit = []
+        flag_is_from_master = OlivaDiceCore.ordinaryInviteManager.isInMasterList(
+            plugin_event.bot_info.hash,
+            OlivaDiceCore.userConfig.getUserHash(
+                plugin_event.data.user_id,
+                'user',
+                plugin_event.platform['platform']
+            )
+        )
+        valDict['flag_is_from_master'] = flag_is_from_master
         if plugin_event.plugin_info['func_type'] == 'group_message':
             if plugin_event.data.host_id != None:
                 flag_is_from_host = True
@@ -155,10 +174,13 @@ def unity_reply(plugin_event, Proc):
         if not flag_groupEnable and not flag_force_reply:
             return
         if isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
+            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            if is_at and not at_user_id:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'tq')
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             # 默认tName是人物卡名
-            tmp_pc_id = plugin_event.data.user_id
+            tmp_pc_id = at_user_id if at_user_id else plugin_event.data.user_id
             tmp_pc_platform = plugin_event.platform['platform']
             tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(
                 tmp_pc_id,
@@ -170,6 +192,17 @@ def unity_reply(plugin_event, Proc):
             )
             if tmp_pc_name != None:
                 dictTValue['tName'] = tmp_pc_name
+            else:
+                res = plugin_event.get_stranger_info(user_id = tmp_pc_id)
+                if res != None:
+                    dictTValue['tName'] = res['data']['name']
+                else:
+                    dictTValue['tName'] = f'用户{tmp_pc_id}'
+            flag_hide = False
+            if isMatchWordStart(tmp_reast_str, 'h'):
+                tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'h')
+                flag_hide = True
+            tmp_reast_str = skipSpaceStart(tmp_reast_str)
             # 新增：支持.tq3#3格式
             tq_number = 1
             tq_times = 1
@@ -226,11 +259,43 @@ def unity_reply(plugin_event, Proc):
                 dictTValue['tYinNumber'] = str(yin_count)
                 dictTValue['tYangNumber'] = str(yang_count)
                 dictTValue['tResult'] = '、'.join(result)
-                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
-                    dictStrCustom['strTQResult'], 
-                    dictTValue
-                )
-                replyMsg(plugin_event, tmp_reply_str)
+                # 根据是否暗骰和代骰选择回复方式
+                if is_at:
+                    if flag_hide and flag_is_from_group:
+                        dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideAtOther'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideShowAtOther'], 
+                            dictTValue
+                        ))
+                        OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    else:
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQAtOther'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, tmp_reply_str)
+                else:
+                    if flag_hide and flag_is_from_group:
+                        dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHide'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideShow'], 
+                            dictTValue
+                        ))
+                        OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    else:
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQResult'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, tmp_reply_str)
                 return
             else:
                 result_list = []
@@ -260,9 +325,41 @@ def unity_reply(plugin_event, Proc):
                 dictTValue['tYinNumber'] = str(all_yin_count)
                 dictTValue['tYangNumber'] = str(all_yang_count)
                 dictTValue['tResult'] = '\n'.join(result_list)
-                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
-                    dictStrCustom['strTQResultMore'], 
-                    dictTValue
-                )
-                replyMsg(plugin_event, tmp_reply_str)
+                # 根据是否暗骰和代骰选择回复方式
+                if is_at:
+                    if flag_hide and flag_is_from_group:
+                        dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideAtOtherMore'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideShowAtOtherMore'], 
+                            dictTValue
+                        ))
+                        OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    else:
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQAtOtherMore'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, tmp_reply_str)
+                else:
+                    if flag_hide and flag_is_from_group:
+                        dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideMore'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQHideShowMore'], 
+                            dictTValue
+                        ))
+                        OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    else:
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strTQResultMore'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, tmp_reply_str)
                 return
