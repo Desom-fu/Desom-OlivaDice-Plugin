@@ -455,7 +455,7 @@ def unity_reply(plugin_event, Proc):
                 back_cleaned, back_bonus, back_luck_mod = parse_expression_and_params(back_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
                 
                 # 确定检定用户
-                target_user_id = at_user_id if at_user_id else plugin_event.data.user_id
+                target_user_id = plugin_event.data.user_id
                 
                 # 获取人物卡信息
                 tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(target_user_id, plugin_event.platform['platform'])
