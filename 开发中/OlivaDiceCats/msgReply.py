@@ -470,6 +470,24 @@ def unity_reply(plugin_event, Proc):
                     else:
                         dictTValue['tName'] = f'用户{target_user_id}'
                 
+                # 设置挑战目标信息
+                if is_at:
+                    # 获取被@用户的人物卡名称，优先使用人物卡名称
+                    challenge_target_name = None
+                    at_pcHash = OlivaDiceCore.pcCard.getPcHash(at_user_id, plugin_event.platform['platform'])
+                    at_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(at_pcHash, tmp_hagID)
+                    
+                    if at_pc_name:
+                        challenge_target_name = at_pc_name
+                    elif 'tUserName01' in dictTValue and dictTValue['tUserName01']:
+                        challenge_target_name = dictTValue['tUserName01']
+                    else:
+                        challenge_target_name = f'用户{at_user_id}'
+                    
+                    dictTValue['tChallengeTarget'] = f'挑战[{challenge_target_name}]'
+                else:
+                    dictTValue['tChallengeTarget'] = ''
+                
                 # 获取人物卡技能数据和规则
                 # 前式技能表（自己的技能）
                 front_pcHash = OlivaDiceCore.pcCard.getPcHash(plugin_event.data.user_id, plugin_event.platform['platform'])
@@ -478,8 +496,12 @@ def unity_reply(plugin_event, Proc):
                 front_skill_valueTable = front_pc_skills.copy()
                 
                 # 后式技能表（@对方时用对方的技能，否则用自己的技能）
-                back_pcHash = tmp_pcHash if is_at else front_pcHash
-                back_pc_name = tmp_pc_name if is_at else front_pc_name
+                if is_at:
+                    back_pcHash = OlivaDiceCore.pcCard.getPcHash(at_user_id, plugin_event.platform['platform'])
+                    back_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(back_pcHash, tmp_hagID)
+                else:
+                    back_pcHash = front_pcHash
+                    back_pc_name = front_pc_name
                 back_pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(back_pcHash, hagId=tmp_hagID) if back_pc_name else {}
                 back_skill_valueTable = back_pc_skills.copy()
                 
@@ -557,7 +579,7 @@ def unity_reply(plugin_event, Proc):
                         dictTValue['tRollPara'] = front_cleaned
                         error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_front.resError, dictStrCustom, dictTValue)
                         dictTValue['tResult'] = f"错误的出值：{error_msg}"
-                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsError'], dictTValue)
                         replyMsg(plugin_event, tmp_reply_str)
                         return
                     front_value = rd_front.resInt
@@ -587,8 +609,8 @@ def unity_reply(plugin_event, Proc):
                     if rd_back.resError is not None:
                         dictTValue['tRollPara'] = back_cleaned
                         error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_back.resError, dictStrCustom, dictTValue)
-                        dictTValue['tResult'] = f"错误的挑战值：{error_msg}"
-                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
+                        dictTValue['tResult'] = f"错误的挑战难度：{error_msg}"
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsError'], dictTValue)
                         replyMsg(plugin_event, tmp_reply_str)
                         return
                     back_value = rd_back.resInt
@@ -616,7 +638,7 @@ def unity_reply(plugin_event, Proc):
                 # 格式化幸运骰显示（只显示结果，不显示投掷过程）
                 dice_display = []
                 for i, result in enumerate(luck_dice_results):
-                    dice_display.append(f"[{i+1}]{result}")
+                    dice_display.append(f"[{i+1}] {result}")
                 
                 dictTValue['tLuckValue'] = str(final_luck_count)
                 dictTValue['tLuckDiceList'] = ' '.join(dice_display)

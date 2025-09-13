@@ -10,9 +10,9 @@ import OlivaDiceCats
 dictStrCustomDict = {}
 
 dictStrCustom = {
-    'strCatsResult': '[{tName}]进行猫咪检定\n{tRerollInfo}出值: {tFrontResult}+{tLuckDiceResult}={tTotalResult}\n挑战难度: {tBackResult} {tSkillCheckReasult} {tSuccessLevel}',
+    'strCatsResult': '[{tName}]进行喵影奇谋检定{tChallengeTarget}\n{tRerollInfo}出值: {tFrontResult}+{tLuckDiceResult}={tTotalResult}\n挑战难度: {tBackResult} {tSkillCheckReasult}\n{tSuccessLevel}',
     'strCatsLuckDice': '幸运骰({tLuckValue}个): {tLuckDiceList}\n请选择1-{tLuckValue}：',
-    'strCatsError': '猫咪检定错误: {tResult}\n正确格式: .cats 前式#挑战难度@其他人（可选）',
+    'strCatsError': '喵影奇谋检定错误: {tResult}\n正确格式: .cats 前式#挑战难度@其他人（可选）',
     'strCatsInvalidSelection': '无效选择，请输入正确数字，请重新投掷',
     'strCatsTimeout': '选择超时，检定取消，请重新投掷',
     'strCatsSuccessLevel': '成功等级: {tSuccessLevelInt}'
@@ -35,12 +35,13 @@ dictTValue = {
     'tLuckValue': '1',
     'tLuckDiceList': '',
     'tRerollInfo': '',
-    'tResult': ''
+    'tResult': '',
+    'tChallengeTarget': ''
 }
 
 dictStrCustomNote = {
     'strTemple': '【temple】命令\n这里写自定义回复对应的说明',
-    'strCatsResult': '【.cats】指令\n进行猫咪检定',
+    'strCatsResult': '【.cats】指令\n进行喵影奇谋检定，显示挑战目标',
     'strCatsLuckDice': '【.cats】指令\n显示幸运骰并等待选择',
     'strCatsError': '【.cats】指令\n检定错误',
     'strCatsInvalidSelection': '【.cats】指令\n无效选择提示',
@@ -49,7 +50,7 @@ dictStrCustomNote = {
 }
 
 dictHelpDocTemp = {
-    'cats': '''【猫咪检定】
+    'cats': '''【喵影奇谋检定】
 .cats (b/p数字)(u/d数字)前式#(b/p数字)(u/d数字)(挑战难度)(@其他人)
 
 参数说明：
