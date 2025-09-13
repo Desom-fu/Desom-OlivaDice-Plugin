@@ -184,7 +184,7 @@ def get_pc_luck_value(plugin_event, user_id, tmp_hagID):
         pass
     return 1  # 默认幸运值为1
 
-def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change, skill_name):
+def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change):
     """
     更新人物卡的幸运值和技能点数
     """
