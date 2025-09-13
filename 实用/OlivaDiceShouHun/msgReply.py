@@ -56,7 +56,7 @@ def unity_reply(plugin_event, Proc):
     tmp_command_str_2 = '。'
     tmp_command_str_3 = '/'
     tmp_reast_str = plugin_event.data.message
-    tmp_reast_str = to_half_width(tmp_reast_str)
+    tmp_reast_str = OlivaDiceCore.msgReply.to_half_width(tmp_reast_str)
     flag_force_reply = False
     flag_is_command = False
     flag_is_from_host = False
@@ -718,19 +718,3 @@ def calculate_d20_success_level(rd_object):
                 if isinstance(value, (dict, list)):
                     nodes_to_visit.append(value)
     return bonus, great_success, great_fail, d20_time
-
-def to_half_width(res):
-    """
-    将字符串中的全角符号转换为半角符号
-    """
-    result = []
-    for char in res:
-        code = ord(char)
-        # 全角空格
-        if code == 0x3000:
-            code = 0x0020
-        # 全角字符（除空格外）
-        elif 0xFF01 <= code <= 0xFF5E:
-            code -= 0xFEE0
-        result.append(chr(code))
-    return ''.join(result)
