@@ -92,12 +92,13 @@ def parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin
 
 def parse_expression_and_params(expr_str, isMatchWordStart, getMatchWordStartRight, skipSpaceStart):
     """
-    解析表达式开头的参数 b/p、u/d
+    解析表达式开头的参数 b/p、u/d、l
     采用与狩魂者插件相同的解析逻辑
-    返回: cleaned_expr, bonus_level, luck_modifier
+    返回: cleaned_expr, bonus_level, luck_modifier, luck_fixed
     """
     bonus_level = 0  # b/p参数影响成功等级
     luck_modifier = 0  # u/d参数影响幸运骰数量
+    luck_fixed = None  # l参数固定幸运骰数量，优先级高于u/d
     tmp_reast_str = expr_str
     
     # 循环处理所有参数
@@ -160,6 +161,20 @@ def parse_expression_and_params(expr_str, isMatchWordStart, getMatchWordStartRig
                 tmp_reast_str = tmp_reast_str[1:]
             continue
         
+        # 处理l参数（固定幸运骰数量）
+        elif isMatchWordStart(tmp_reast_str, 'l'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'l')
+            # 检查是否有数字指定，只取一位
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                luck_fixed = max(1, min(5, int(tmp_reast_str[0])))  # 限制在1-5之间
+                tmp_reast_str = tmp_reast_str[1:]
+            else:
+                luck_fixed = 1  # 默认为1
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
         # 如果没有匹配到任何参数，跳出循环
         if tmp_reast_str == original_str:
             break
@@ -167,7 +182,7 @@ def parse_expression_and_params(expr_str, isMatchWordStart, getMatchWordStartRig
     # 跳过空格并返回清理后的表达式
     cleaned_expr = skipSpaceStart(tmp_reast_str)
     
-    return cleaned_expr, bonus_level, luck_modifier
+    return cleaned_expr, bonus_level, luck_modifier, luck_fixed
 
 def get_pc_luck_value(plugin_event, user_id, tmp_hagID):
     """
@@ -184,89 +199,165 @@ def get_pc_luck_value(plugin_event, user_id, tmp_hagID):
         pass
     return 1  # 默认幸运值为1
 
-def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change):
+def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change, upgrade_points_change=1):
     """
     更新人物卡的幸运和升级点
     """
     try:
-        tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, plugin_event.platform['platform'])
+        tmp_pc_platform = plugin_event.platform['platform']
+        tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, tmp_pc_platform)
         tmp_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
-        if tmp_pc_name:
-            pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(tmp_pcHash, hagId=tmp_hagID)
-            if pc_skills:
-                # 更新幸运值
-                current_luck = int(pc_skills.get('幸运', 1))
-                new_luck = max(1, min(5, current_luck + luck_change))
-                pc_skills['幸运'] = str(new_luck)
-                
-                # 更新升级点数
-                current_skill = int(pc_skills.get("升级点", 0))
-                pc_skills["升级点"] = str(current_skill + 1)
-                
-                # 保存更新
-                OlivaDiceCore.pcCard.pcCardDataSetByPcName(tmp_pcHash, tmp_pc_name, pc_skills, hagId=tmp_hagID)
+        
+        if not tmp_pc_name:
+            return  # 没有人物卡就不更新
+        
+        # 更新幸运值
+        if luck_change != 0:
+            tmp_luck_old = OlivaDiceCore.pcCard.pcCardDataGetBySkillName(
+                tmp_pcHash,
+                '幸运',
+                hagId=tmp_hagID
+            )
+            current_luck = int(tmp_luck_old) if tmp_luck_old is not None else 1
+            new_luck = max(1, min(5, current_luck + int(luck_change)))
+            
+            OlivaDiceCore.pcCard.pcCardDataSetBySkillName(
+                tmp_pcHash,
+                '幸运',
+                new_luck,
+                tmp_pc_name,
+                hagId=tmp_hagID
+            )
+        
+        # 更新升级点数
+        if upgrade_points_change != 0:
+            tmp_skill_old = OlivaDiceCore.pcCard.pcCardDataGetBySkillName(
+                tmp_pcHash,
+                '升级点',
+                hagId=tmp_hagID
+            )
+            current_skill = int(tmp_skill_old) if tmp_skill_old is not None else 0
+            new_skill = current_skill + int(upgrade_points_change)
+            
+            OlivaDiceCore.pcCard.pcCardDataSetBySkillName(
+                tmp_pcHash,
+                '升级点',
+                new_skill,
+                tmp_pc_name,
+                hagId=tmp_hagID
+            )
     except:
         pass
 
 def roll_luck_dice(luck_count, tmp_template_customDefault=None):
     """
-    投掷幸运骰子
-    返回: (骰子结果列表, 投掷过程详情列表)
+    投掷幸运骰子，自动处理10/1的重投
+    返回: (可选择骰子结果列表, 投掷过程详情列表, 大成功数量, 大失败数量, 是否需要手动选择, 确定的结果, 所有详情列表, 带序号的所有详情)
     """
-    dice_results = []
-    dice_details = []
+    selectable_results = []  # 可以选择的骰子
+    selectable_display_details = []  # 可选择骰子的显示详情（包含重投过程）
+    all_details = []  # 所有骰子的详情（包括大成功/大失败）
+    all_details_with_index = []  # 带序号的所有骰子详情
+    critical_success_count = 0
+    critical_failure_count = 0
+    confirmed_result = None  # 如果有确定的大成功/大失败结果
+
+    
     for i in range(luck_count):
         rd = OlivaDiceCore.onedice.RD('1d10', tmp_template_customDefault)
         rd.roll()
         if rd.resError is None:
-            result = int(rd.resInt)
-            dice_results.append(result)
-            # 显示投掷详情
-            detail = f"幸运骰({result})"
-            dice_details.append(detail)
+            original_result = int(rd.resInt)  # 保存原始结果
+            result = original_result  # 用于选择的结果（保持原始值）
+            detail_parts = [f"{original_result}"]
+            is_critical = False
+            
+            # 检查是否需要重投
+            if original_result == 10:
+                # 重投检查大成功
+                rd_reroll = OlivaDiceCore.onedice.RD('1d10', tmp_template_customDefault)
+                rd_reroll.roll()
+                if rd_reroll.resError is None:
+                    reroll_result = int(rd_reroll.resInt)
+                    detail_parts.append(f"重投{reroll_result}")
+                    if reroll_result == 10:
+                        # 大成功，不参与选择
+                        critical_success_count += 1
+                        detail_parts.append("大成功")
+                        is_critical = True
+                        if confirmed_result is None:
+                            confirmed_result = 10  # 记录一个大成功的结果用于计算
+                    # 注意：即使重投不是10，选择时仍然使用原始的10
+                else:
+                    pass  # 重投失败，保持原值10
+            elif original_result == 1:
+                # 重投检查大失败
+                rd_reroll = OlivaDiceCore.onedice.RD('1d10', tmp_template_customDefault)
+                rd_reroll.roll()
+                if rd_reroll.resError is None:
+                    reroll_result = int(rd_reroll.resInt)
+                    detail_parts.append(f"重投{reroll_result}")
+                    if reroll_result == 1:
+                        # 大失败，不参与选择
+                        critical_failure_count += 1
+                        detail_parts.append("大失败")
+                        is_critical = True
+                        if confirmed_result is None:
+                            confirmed_result = 1  # 记录一个大失败的结果用于计算
+                    # 注意：即使重投不是1，选择时仍然使用原始的1
+                else:
+                    pass  # 重投失败，保持原值1
+            
+            # 生成显示字符串
+            display_detail = '-'.join(detail_parts)
+            all_details.append(display_detail)
+            
+            # 只有非大成功/大失败的骰子才参与选择
+            if not is_critical:
+                selectable_results.append(result)
+                selectable_display_details.append(display_detail)
+            
+            # 生成带序号的显示字符串（所有骰子都按投掷顺序显示序号）
+            all_details_with_index.append(f"[{i+1}] {display_detail}")
         else:
-            dice_results.append(1)  # 如果出错默认为1
-            dice_details.append("幸运骰(1)")
-    return dice_results, dice_details
-
-def check_critical(dice_result, tmp_template_customDefault=None):
-    """
-    检查大成功/大失败
-    返回: (结果类型, 重投详情)
-    """
-    reroll_detail = ""
+            # 投掷出错，默认为1并参与选择
+            display_detail = "1"
+            selectable_results.append(1)
+            selectable_display_details.append(display_detail)
+            all_details.append(display_detail)
+            all_details_with_index.append(f"[{i+1}] {display_detail}")
     
-    if dice_result == 10:
-        # 重投检查大成功
-        rd_reroll = OlivaDiceCore.onedice.RD('1d10', tmp_template_customDefault)
-        rd_reroll.roll()
-        if rd_reroll.resError is None:
-            reroll_result = rd_reroll.resInt
-            reroll_detail = f"重投1D10={reroll_result}"
-            if rd_reroll.resDetail and rd_reroll.resDetail != str(reroll_result):
-                reroll_detail = f"重投1D10={rd_reroll.resDetail}={reroll_result}"
-            if reroll_result == 10:
-                return 'critical_success', reroll_detail
-            else:
-                return None, reroll_detail
-        else:
-            return None, "重投1D10=失败"
-    elif dice_result == 1:
-        # 重投检查大失败
-        rd_reroll = OlivaDiceCore.onedice.RD('1d10', tmp_template_customDefault)
-        rd_reroll.roll()
-        if rd_reroll.resError is None:
-            reroll_result = rd_reroll.resInt
-            reroll_detail = f"重投1D10={reroll_result}"
-            if rd_reroll.resDetail and rd_reroll.resDetail != str(reroll_result):
-                reroll_detail = f"重投1D10={rd_reroll.resDetail}={reroll_result}"
-            if reroll_result == 1:
-                return 'critical_failure', reroll_detail
-            else:
-                return None, reroll_detail
-        else:
-            return None, "重投1D10=失败"
-    return None, ""
+    # 判断是否需要手动选择
+    need_manual_selection = True
+    if critical_success_count > critical_failure_count:
+        # 大成功数量多，直接确定为大成功
+        need_manual_selection = False
+    elif critical_failure_count > critical_success_count:
+        # 大失败数量多，直接确定为大失败
+        need_manual_selection = False
+    elif critical_success_count == critical_failure_count and (critical_success_count > 0):
+        # 大成功和大失败数量相等且都大于0，需要手动选择
+        need_manual_selection = True
+    else:
+        # 没有大成功/大失败，或者只有可选择的骰子，需要手动选择
+        need_manual_selection = len(selectable_results) > 0
+    
+    return selectable_results, selectable_display_details, critical_success_count, critical_failure_count, need_manual_selection, confirmed_result, all_details, all_details_with_index
+
+def determine_critical_result(critical_success_count, critical_failure_count):
+    """
+    根据大成功和大失败的数量确定最终结果类型
+    返回: (结果类型, 幸运变化, 升级点变化)
+    """
+    if critical_success_count > critical_failure_count:
+        # 最终结果为大成功：幸运+1，升级点+1
+        return 'critical_success', 1, 1
+    elif critical_failure_count > critical_success_count:
+        # 最终结果为大失败：幸运-1，升级点+1
+        return 'critical_failure', -1, 1
+    else:
+        # 数量相等或都为0，抵消：幸运和升级点都不变
+        return None, 0, 0
 
 def unity_init(plugin_event, Proc):
     # 这里是插件初始化，通常用于加载配置等
@@ -450,9 +541,9 @@ def unity_reply(plugin_event, Proc):
                     back_expr = '10'
                 
                 # 解析前式参数
-                front_cleaned, front_bonus, front_luck_mod = parse_expression_and_params(front_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
+                front_cleaned, front_bonus, front_luck_mod, front_luck_fixed = parse_expression_and_params(front_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
                 # 解析后式参数（后式中的参数效果相反）
-                back_cleaned, back_bonus, back_luck_mod = parse_expression_and_params(back_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
+                back_cleaned, back_bonus, back_luck_mod, back_luck_fixed = parse_expression_and_params(back_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
                 
                 # 确定检定用户
                 target_user_id = plugin_event.data.user_id
@@ -629,69 +720,109 @@ def unity_reply(plugin_event, Proc):
                 
                 # 获取幸运值并计算幸运骰数量
                 luck_value = get_pc_luck_value(plugin_event, target_user_id, tmp_hagID)
-                total_luck_modifier = front_luck_mod - back_luck_mod  # 后式中的u/d效果相反
-                final_luck_count = max(1, min(5, luck_value + total_luck_modifier))
+                
+                # 确定最终幸运骰数量，l参数优先级最高
+                final_luck_fixed = back_luck_fixed if back_luck_fixed is not None else front_luck_fixed
+                if final_luck_fixed is not None:
+                    final_luck_count = final_luck_fixed
+                else:
+                    total_luck_modifier = front_luck_mod - back_luck_mod  # 后式中的u/d效果相反
+                    final_luck_count = max(1, min(5, luck_value + total_luck_modifier))
                 
                 # 投掷幸运骰
-                luck_dice_results, luck_dice_details = roll_luck_dice(final_luck_count, tmp_template_customDefault)
+                luck_dice_results, luck_dice_display_details, critical_success_count, critical_failure_count, need_manual_selection, confirmed_result, all_details, all_details_with_index = roll_luck_dice(final_luck_count, tmp_template_customDefault)
                 
-                # 格式化幸运骰显示（只显示结果，不显示投掷过程）
-                dice_display = []
-                for i, result in enumerate(luck_dice_results):
-                    dice_display.append(f"[{i+1}] {result}")
-                
-                dictTValue['tLuckValue'] = str(final_luck_count)
-                dictTValue['tLuckDiceList'] = ' '.join(dice_display)
-                
-                # 显示幸运骰并等待选择
-                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsLuckDice'], dictTValue)
-                replyMsg(plugin_event, tmp_reply_str)
-                
-                # 等待用户选择
-                tmp_select = OlivaDiceCore.msgReplyModel.replyCONTEXT_regWait(
-                    plugin_event = plugin_event,
-                    flagBlock = 'allowCommand',
-                    hash = OlivaDiceCore.msgReplyModel.contextRegHash([None, plugin_event.data.user_id])
-                )
-                
-                # 处理选择结果
-                selected_index = 0  # 默认选择第一个
-                if type(tmp_select) == str and tmp_select.isdigit():
-                    tmp_select_int = int(tmp_select) - 1
-                    if tmp_select_int >= 0 and tmp_select_int < final_luck_count:
-                        selected_index = tmp_select_int
-                        if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
-                            del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
-                    else:
-                        # 无效输入，返回错误信息
-                        if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
-                            del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
-                        # 选择超出范围，返回错误信息
-                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
-                        replyMsg(plugin_event, tmp_reply_str)
-                        return
-                elif tmp_select == None:
-                    # 无效输入，返回错误信息
-                    if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
-                        del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
-                    # 超时情况
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
-                    return
+                # 格式化幸运骰显示
+                if need_manual_selection and len(luck_dice_results) > 0:
+                    # 需要手动选择时，显示可选择的骰子（包含重投过程）
+                    dice_display = []
+                    for i, display_detail in enumerate(luck_dice_display_details):
+                        dice_display.append(f"[{i+1}] {display_detail}")
+                    dictTValue['tLuckDiceList'] = ' '.join(dice_display)
+                    dictTValue['tLuckValue'] = str(len(luck_dice_results))
                 else:
-                    # 无效输入，返回错误信息
-                    if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
-                        del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
-                    return
+                    # 自动确定结果时，显示所有骰子详情（带序号）
+                    dictTValue['tLuckDiceList'] = ' '.join(all_details_with_index)
+                    dictTValue['tLuckValue'] = str(final_luck_count)
                 
-                # 获取选择的骰子结果
-                selected_dice = luck_dice_results[selected_index]
-                selected_detail = luck_dice_details[selected_index]
+                # 确定是否需要手动选择
+                selected_dice = None
+                selected_detail = None
+                selected_index = 0
+                critical_type = None
+                luck_change = 0
+                upgrade_points_change = 0
                 
-                # 检查大成功/大失败
-                critical_type, reroll_detail = check_critical(selected_dice, tmp_template_customDefault)
+                if not need_manual_selection:
+                    # 自动确定结果：大成功数量不等于大失败数量
+                    critical_type, luck_change, upgrade_points_change = determine_critical_result(critical_success_count, critical_failure_count)
+                    
+                    # 使用确定的结果（如果没有可选择骰子的话）
+                    if confirmed_result is not None:
+                        selected_dice = confirmed_result
+                        selected_detail = f"幸运骰({confirmed_result})"
+                    elif len(luck_dice_results) > 0:
+                        # 如果还有可选择的骰子，选择第一个
+                        selected_dice = luck_dice_results[0]
+                        selected_detail = f"幸运骰({luck_dice_display_details[0]})"
+                    else:
+                        # 兜底情况
+                        selected_dice = 5
+                        selected_detail = "幸运骰(5)"
+                else:
+                    # 需要手动选择
+                    if len(luck_dice_results) == 0:
+                        # 没有可选择的骰子，可能所有都是大成功/大失败，按数量相等处理
+                        critical_type, luck_change, upgrade_points_change = determine_critical_result(critical_success_count, critical_failure_count)
+                        selected_dice = confirmed_result if confirmed_result is not None else 5
+                        selected_detail = f"幸运骰({selected_dice})"
+                    else:
+                        # 显示幸运骰并等待选择
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsLuckDice'], dictTValue)
+                        replyMsg(plugin_event, tmp_reply_str)
+                        
+                        # 等待用户选择
+                        tmp_select = OlivaDiceCore.msgReplyModel.replyCONTEXT_regWait(
+                            plugin_event = plugin_event,
+                            flagBlock = 'allowCommand',
+                            hash = OlivaDiceCore.msgReplyModel.contextRegHash([None, plugin_event.data.user_id])
+                        )
+                    
+                        # 处理选择结果
+                        if type(tmp_select) == str and tmp_select.isdigit():
+                            tmp_select_int = int(tmp_select) - 1
+                            if tmp_select_int >= 0 and tmp_select_int < len(luck_dice_results):
+                                selected_index = tmp_select_int
+                                if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
+                                    del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
+                            else:
+                                # 无效输入，返回错误信息
+                                if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
+                                    del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
+                                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
+                                replyMsg(plugin_event, tmp_reply_str)
+                                return
+                        elif tmp_select == None:
+                            # 超时情况
+                            if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
+                                del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
+                            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
+                            replyMsg(plugin_event, tmp_reply_str)
+                            return
+                        else:
+                            # 无效输入
+                            if tmp_bothash in OlivaDiceCore.crossHook.dictReplyContextReg and tmp_hash in OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash]:
+                                del OlivaDiceCore.crossHook.dictReplyContextReg[tmp_bothash][tmp_hash]
+                            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsInvalidSelection'], dictTValue)
+                            replyMsg(plugin_event, tmp_reply_str)
+                            return
+                        
+                        # 获取选择的骰子结果
+                        selected_dice = luck_dice_results[selected_index]
+                        selected_detail = f"幸运骰({luck_dice_display_details[selected_index]})"
+                    
+                    # 手动选择情况下，根据大成功/大失败的最终结果计算幸运和升级点变化
+                    _, luck_change, upgrade_points_change = determine_critical_result(critical_success_count, critical_failure_count)
                 
                 # 计算最终结果
                 total_result = front_value + selected_dice
@@ -711,11 +842,16 @@ def unity_reply(plugin_event, Proc):
                 # 幸运骰显示（只显示结果，不显示投掷过程）
                 luck_display = selected_detail
                 
-                # 重投信息单独处理
+                # 重投信息处理（从幸运骰详情中提取）
                 reroll_info = ""
-                if reroll_detail:
-                    reroll_info = f"{reroll_detail}\n"
-                
+                if critical_success_count > 0 or critical_failure_count > 0:
+                    reroll_parts = []
+                    if critical_success_count > 0:
+                        reroll_parts.append(f"大成功×{critical_success_count}")
+                    if critical_failure_count > 0:
+                        reroll_parts.append(f"大失败×{critical_failure_count}")
+                    reroll_info = f"重投结果: {', '.join(reroll_parts)}\n"
+                    
                 # 设置显示值
                 dictTValue['tFrontResult'] = front_process
                 dictTValue['tLuckDiceResult'] = luck_display
@@ -730,30 +866,31 @@ def unity_reply(plugin_event, Proc):
                 # 处理大成功/大失败
                 if critical_type == 'critical_success':
                     tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_SUCCESS
-                    update_pc_luck_and_skill(plugin_event, target_user_id, tmp_hagID, 1)
-                    dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsResult'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
-                    return
                 elif critical_type == 'critical_failure':
                     tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_FAIL
-                    update_pc_luck_and_skill(plugin_event, target_user_id, tmp_hagID, -1)
-                    dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsResult'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
-                    return
-                
-                # 正常检定结果
-                if final_success_level >= 0:
-                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
                 else:
-                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
+                    # 正常检定结果
+                    if final_success_level >= 0:
+                        tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
+                    else:
+                        tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
                 
                 # 获取技能检定结果文案
                 dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
-                dictTValue['tSuccessLevel'] = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsSuccessLevel'], dictTValue)
                 
-                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsResult'], dictTValue)
+                # 更新人物卡的幸运值和升级点（只有在有变化时才更新）
+                if luck_change != 0 or upgrade_points_change != 0:
+                    update_pc_luck_and_skill(plugin_event, tmp_userID, tmp_hagID, luck_change, upgrade_points_change)
+                
+                # 根据是否自动确定结果选择不同的回复模板
+                if not need_manual_selection and (critical_type == 'critical_success' or critical_type == 'critical_failure'):
+                    # 直接大成功/大失败，使用简化模板，显示所有骰子详情
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsCriticalResult'], dictTValue)
+                else:
+                    # 正常检定或手动选择后的结果，使用完整模板
+                    dictTValue['tSuccessLevel'] = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsSuccessLevel'], dictTValue)
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsResult'], dictTValue)
+                
                 replyMsg(plugin_event, tmp_reply_str)
                 
             except Exception as e:
