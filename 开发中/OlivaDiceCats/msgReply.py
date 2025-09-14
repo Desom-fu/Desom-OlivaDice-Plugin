@@ -186,7 +186,7 @@ def get_pc_luck_value(plugin_event, user_id, tmp_hagID):
 
 def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change):
     """
-    更新人物卡的幸运值和技能点数
+    更新人物卡的幸运和升级点
     """
     try:
         tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, plugin_event.platform['platform'])
@@ -199,9 +199,9 @@ def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change):
                 new_luck = max(1, min(5, current_luck + luck_change))
                 pc_skills['幸运'] = str(new_luck)
                 
-                # 更新技能点数
-                current_skill = int(pc_skills.get("点数", 0))
-                pc_skills["点数"] = str(current_skill + 1)
+                # 更新升级点数
+                current_skill = int(pc_skills.get("升级点", 0))
+                pc_skills["升级点"] = str(current_skill + 1)
                 
                 # 保存更新
                 OlivaDiceCore.pcCard.pcCardDataSetByPcName(tmp_pcHash, tmp_pc_name, pc_skills, hagId=tmp_hagID)
