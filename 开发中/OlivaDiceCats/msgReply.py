@@ -11,6 +11,30 @@ import copy
 import re
 import random
 
+def get_difficulty_level(difficulty_value):
+    """
+    根据难度值返回对应的难度等级文本
+    """
+    if difficulty_value < 2:
+        return "近乎自动成功"
+    elif difficulty_value <= 4:
+        return "极易"
+    elif difficulty_value <= 6:
+        return "容易"
+    elif difficulty_value <= 8:
+        return "稍易"
+    elif difficulty_value <= 10:
+        return "普通"
+    elif difficulty_value <= 12:
+        return "稍难"
+    elif difficulty_value <= 14:
+        return "困难"
+    elif difficulty_value <= 16:
+        return "极难"
+    elif difficulty_value <= 18:
+        return "近乎不可能"
+    else:
+        return "不可能（英勇行动）"
 def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
     """
     使用 getExpression 函数替换技能名，并将 0dX 替换为 0
@@ -688,8 +712,8 @@ def unity_reply(plugin_event, Proc):
                             front_detail = str(front_value)
                 
                 # 计算后式结果（@对方时用对方的技能，否则用自己的技能）
-                back_value = 10  # 默认挑战难度为10
-                back_detail = "10"
+                back_value = 9  # 默认挑战难度为9
+                back_detail = "9"
                 if back_cleaned:
                     # 使用replace_skills处理技能替换（后式根据是否@对方选择技能表）
                     back_expr, back_detail = replace_skills(back_cleaned.replace('=', '').replace(' ', ''), back_skill_valueTable, tmp_pcCardRule)
@@ -870,11 +894,15 @@ def unity_reply(plugin_event, Proc):
                         reroll_parts.append(f"大失败×{critical_failure_count}")
                     reroll_info = f"重投结果: {', '.join(reroll_parts)}\n"
 
+                # 获取难度等级文本
+                total_difficulty_level = get_difficulty_level(total_result)
+                back_difficulty_level = get_difficulty_level(back_value)
+                
                 # 设置显示值
                 dictTValue['tFrontResult'] = front_process
                 dictTValue['tLuckDiceResult'] = luck_display
-                dictTValue['tTotalResult'] = str(total_result)
-                dictTValue['tBackResult'] = back_process
+                dictTValue['tTotalResult'] = f"{total_result}[{total_difficulty_level}]"
+                dictTValue['tBackResult'] = f"{back_process}[{back_difficulty_level}]"
                 dictTValue['tSuccessLevelInt'] = str(final_success_level)
                 dictTValue['tSuccessLevelProcess'] = success_level_process
                 dictTValue['tRerollInfo'] = reroll_info
