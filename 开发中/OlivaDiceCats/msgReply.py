@@ -309,7 +309,7 @@ def roll_luck_dice(luck_count, tmp_template_customDefault=None):
                     pass  # 重投失败，保持原值1
             
             # 生成显示字符串
-            display_detail = '-'.join(detail_parts)
+            display_detail = ':'.join(detail_parts)
             all_details.append(display_detail)
             
             # 只有非大成功/大失败的骰子才参与选择
@@ -830,7 +830,18 @@ def unity_reply(plugin_event, Proc):
                 
                 # 应用b/p参数
                 final_bonus = front_bonus - back_bonus  # 后式中的b/p效果相反
-                final_success_level = success_level + final_bonus
+                adjusted_success_level = success_level + final_bonus
+                
+                # 成功等级除以2并向下取整
+                final_success_level = adjusted_success_level // 2
+                
+                # 构建成功等级计算过程显示
+                success_level_process = f"{total_result}-{back_value}={success_level}"
+                if final_bonus != 0:
+                    bonus_sign = "+" if final_bonus >= 0 else ""
+                    success_level_process += f"{bonus_sign}{final_bonus}={adjusted_success_level}"
+                if adjusted_success_level != final_success_level:
+                    success_level_process += f"÷2={final_success_level}"
                 
                 # 构建显示过程
                 # 前式过程显示
@@ -851,13 +862,14 @@ def unity_reply(plugin_event, Proc):
                     if critical_failure_count > 0:
                         reroll_parts.append(f"大失败×{critical_failure_count}")
                     reroll_info = f"重投结果: {', '.join(reroll_parts)}\n"
-                    
+
                 # 设置显示值
                 dictTValue['tFrontResult'] = front_process
                 dictTValue['tLuckDiceResult'] = luck_display
                 dictTValue['tTotalResult'] = str(total_result)
                 dictTValue['tBackResult'] = back_process
                 dictTValue['tSuccessLevelInt'] = str(final_success_level)
+                dictTValue['tSuccessLevelProcess'] = success_level_process
                 dictTValue['tRerollInfo'] = reroll_info
                 
                 # 判断技能检定类型

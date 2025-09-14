@@ -16,7 +16,7 @@ dictStrCustom = {
     'strCatsError': '喵影奇谋检定错误: {tResult}\n请通过.help cats查看正确检定格式',
     'strCatsInvalidSelection': '输入了无效的选项，请重新投掷',
     'strCatsTimeout': '选择超时，检定取消，请重新投掷',
-    'strCatsSuccessLevel': '成功等级: {tSuccessLevelInt}'
+    'strCatsSuccessLevel': '成功等级: {tSuccessLevelProcess}'
 }
 
 dictStrConst = {
@@ -33,6 +33,7 @@ dictTValue = {
     'tSkillCheckReasult': '',
     'tSuccessLevel': '',
     'tSuccessLevelInt': '0',
+    'tSuccessLevelProcess': '',
     'tLuckValue': '1',
     'tLuckDiceList': '',
     'tRerollInfo': '',
@@ -72,7 +73,8 @@ dictHelpDocTemp = {
 1. 根据人物卡幸运属性投掷1-5个d10（可通过参数调整）
 2. 若投出10重投，重投出10为大成功；若投出1重投，重投出1为大失败
 3. 多个大成功/大失败按数量多的决定结果，相等时可手动选择
-4. 前式+选择的d10结果与挑战难度对比
-5. 大成功：幸运变化=大成功数-大失败数，升级点变化=大成功数+大失败数
-6. 若无挑战难度，则默认为10''',
+4. 前式+选择的d10结果与挑战难度对比，计算基础成功等级
+5. 成功等级计算：(基础成功等级+b/p修正)÷2向下取整
+6. 最终大成功时幸运+1升级点+1，大失败时幸运-1升级点+1，抵消时均不变
+7. 若无挑战难度，则默认为10''',
 }
