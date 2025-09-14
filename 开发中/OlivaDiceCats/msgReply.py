@@ -718,6 +718,13 @@ def unity_reply(plugin_event, Proc):
                         else:
                             back_detail = str(back_value)
                 
+                # 处理偶数挑战难度：偶数减1变奇数
+                original_back_value = back_value
+                if back_value % 2 == 0:  # 如果是偶数
+                    back_value -= 1
+                    if original_back_value != back_value:
+                        back_detail = f"{back_detail}→{back_value}(偶数转奇数)"
+                
                 # 获取幸运值并计算幸运骰数量
                 luck_value = get_pc_luck_value(plugin_event, target_user_id, tmp_hagID)
                 
