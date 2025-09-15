@@ -14,8 +14,7 @@ dictStrCustom = {
     'strCatsCriticalResult': '[{tName}]进行喵影奇谋检定{tChallengeTarget}\n幸运骰({tLuckValue}个): {tLuckDiceList}\n{tSkillCheckReasult}',
     'strCatsLuckDice': '幸运骰({tLuckValue}个): {tLuckDiceList}\n请选择1-{tLuckValue}：',
     'strCatsError': '喵影奇谋检定错误: {tResult}\n请通过.help cats查看正确检定格式；录卡规则请通过.help catsst查看',
-    'strCatsInvalidSelection': '输入了无效的选项，请重新投掷',
-    'strCatsTimeout': '选择超时，检定取消，请重新投掷',
+    'strCatsInvalidSelection': '输入了无效的选项或超时，请重新投掷',
     'strCatsSuccessLevel': '成功等级: {tSuccessLevelProcess}'
 }
 
@@ -46,9 +45,8 @@ dictStrCustomNote = {
     'strCatsResult': '【.cats】指令\n进行喵影奇谋检定，显示挑战目标',
     'strCatsCriticalResult': '【.cats】指令\n直接大成功/大失败结果',
     'strCatsLuckDice': '【.cats】指令\n显示幸运骰并等待选择',
-    'strCatsError': '【.cats】指令\n检定错误',
+    'strCatsError': '【.cats】指令\n检定错误或超时提示',
     'strCatsInvalidSelection': '【.cats】指令\n无效选择提示',
-    'strCatsTimeout': '【.cats】指令\n选择超时提示',
     'strCatsSuccessLevel': '【.cats】指令\n成功等级'
 }
 
