@@ -23,9 +23,11 @@
 
 ### 💪实用
  * `OlivaDiceShouHun` -- 狩魂者插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/827
+ * `OlivaDiceCats` -- 喵影奇谋插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/847
  * `OlivaDiceTaichi` -- 三尺之下插件，暂未包含人物卡模板。论坛发布地址：暂未发布
  * `OlivaDiceSortCOC` -- 排序制卡结果并合并转发，便于快速找到最高总属性的结果。论坛发布地址：https://forum.olivos.run/d/836-olivadicesortcoc
  * `SmartInterceptor` -- 拦截词系统，包含三种拦截方式。论坛发布地址：https://forum.olivos.run/d/707-smartinterceptor
+ 
 
 ### 📚示例
  * `OlivaDice插件模板` -- 一个自用插件模板，论坛发布地址：https://forum.olivos.run/d/833-olivadicecoregui
