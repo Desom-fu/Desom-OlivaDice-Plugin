@@ -13,7 +13,7 @@ dictStrCustom = {
     'strCatsResult': '[{tName}]进行喵影奇谋检定{tChallengeTarget}\n{tRerollInfo}出值: {tFrontResult}+{tLuckDiceResult}={tTotalResult}\n挑战难度: {tBackResult} {tSkillCheckReasult}\n{tSuccessLevel}',
     'strCatsCriticalResult': '[{tName}]进行喵影奇谋检定{tChallengeTarget}\n幸运骰({tLuckValue}个): {tLuckDiceList}\n{tSkillCheckReasult}',
     'strCatsLuckDice': '幸运骰({tLuckValue}个): {tLuckDiceList}\n请选择1-{tLuckValue}：',
-    'strCatsError': '喵影奇谋检定错误: {tResult}\n请通过.help cats查看正确检定格式',
+    'strCatsError': '喵影奇谋检定错误: {tResult}\n请通过.help cats查看正确检定格式；录卡规则请通过.help catsst查看',
     'strCatsInvalidSelection': '输入了无效的选项，请重新投掷',
     'strCatsTimeout': '选择超时，检定取消，请重新投掷',
     'strCatsSuccessLevel': '成功等级: {tSuccessLevelProcess}'
@@ -66,8 +66,8 @@ dictHelpDocTemp = {
 
 例子：
 .cats u1 皮毛+1#9
-.cats l3 皮毛#6+抚摸@其他人
-.cats b1 u2 技能名#l4 挑战难度
+.cats l3 皮毛#5+抚摸*2@其他人
+.cats b1 u2 技能名#11
 
 检定规则：
 1. 根据人物卡幸运属性投掷1-5个d10（可通过参数调整）
@@ -78,4 +78,10 @@ dictHelpDocTemp = {
 6. 成功等级计算：(基础成功等级+b/p修正)÷2向下取整
 7. 最终大成功时幸运+1升级点+1，大失败时幸运-1升级点+1，抵消时均不变
 8. 若无挑战难度，则默认为9''',
+
+    'catsst': '''【喵影奇谋跑团数据录入帮助文档】
+1、将骰子拉入群聊后，请先使用[.set temp cats]，让本群套用喵影奇谋模板（只需输入一次，其他人无需再输入）
+2、玩家在填写完角色卡并审核通过后，将附表“信息总览表与检定公式”中的.st数据复制粘贴，输入群内，这样就完成了基础数据的录入。
+3、玩家输入[.sn]或者[.sn template]，改变名片格式。
+4、玩家输入[.sn auto on]，让名片数据能够自动变化。''',
 }
