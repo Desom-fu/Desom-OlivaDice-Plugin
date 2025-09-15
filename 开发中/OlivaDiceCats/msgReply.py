@@ -555,14 +555,14 @@ def unity_reply(plugin_event, Proc):
             tmp_reast_str = tmp_reast_str.rstrip(' ')
             
             try:
-                # 分离前式和后式，如果没有#则默认挑战难度为10
+                # 分离前式和后式，如果没有#则默认挑战难度为9
                 if '#' in tmp_reast_str:
                     parts = tmp_reast_str.split('#', 1)
                     front_expr = parts[0].strip()
                     back_expr = parts[1].strip()
                 else:
                     front_expr = tmp_reast_str.strip()
-                    back_expr = '10'
+                    back_expr = '9'
                 
                 # 解析前式参数
                 front_cleaned, front_bonus, front_luck_mod, front_luck_fixed = parse_expression_and_params(front_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
