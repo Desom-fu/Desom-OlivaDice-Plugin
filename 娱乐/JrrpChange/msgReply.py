@@ -134,6 +134,7 @@ def poke_jrrp(plugin_event, Proc):
         hash_tmp = hashlib.new('md5')
         hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime())).encode(encoding='UTF-8'))
         hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
+        hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
         tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
         luck_dict = load_luck_dict()
         tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
@@ -274,6 +275,7 @@ def unity_reply(plugin_event, Proc):
             hash_tmp = hashlib.new('md5')
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime())).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
+            hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
             luck_dict = load_luck_dict()
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
@@ -292,6 +294,7 @@ def unity_reply(plugin_event, Proc):
             hash_tmp = hashlib.new('md5')
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.localtime())) - 24 * 60 * 60))).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
+            hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
             luck_dict = load_luck_dict()
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
@@ -310,6 +313,7 @@ def unity_reply(plugin_event, Proc):
             hash_tmp = hashlib.new('md5')
             hash_tmp.update(str(time.strftime('%Y-%m-%d', time.localtime(int(time.mktime(time.localtime())) + 24 * 60 * 60))).encode(encoding='UTF-8'))
             hash_tmp.update(str(plugin_event.data.user_id).encode(encoding='UTF-8'))
+            hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
             luck_dict = load_luck_dict()
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
