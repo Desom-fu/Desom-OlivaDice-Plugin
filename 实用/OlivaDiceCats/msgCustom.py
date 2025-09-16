@@ -41,7 +41,6 @@ dictTValue = {
 }
 
 dictStrCustomNote = {
-    'strTemple': '【temple】命令\n这里写自定义回复对应的说明',
     'strCatsResult': '【.cats】指令\n进行喵影奇谋检定，显示挑战目标',
     'strCatsCriticalResult': '【.cats】指令\n直接大成功/大失败结果',
     'strCatsLuckDice': '【.cats】指令\n显示幸运骰并等待选择',
