@@ -541,7 +541,7 @@ def unity_reply(plugin_event, Proc):
             back_detail = format_long_dice_rolls(back_detail)
             dictTValue['tFrontResult'] = front_detail
             dictTValue['tBackResult'] = back_detail
-            dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
+            dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, tmp_pcHash, tmp_pc_name)
             
             # 添加成功等级
             if front_result > back_result:

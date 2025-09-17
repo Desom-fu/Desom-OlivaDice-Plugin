@@ -923,7 +923,7 @@ def unity_reply(plugin_event, Proc):
                         tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
                 
                 # 获取技能检定结果文案
-                dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue)
+                dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, tmp_pcHash, tmp_pc_name)
                 
                 # 更新人物卡的幸运值和升级点（只有在有变化时才更新）
                 if luck_change != 0 or upgrade_points_change != 0:
