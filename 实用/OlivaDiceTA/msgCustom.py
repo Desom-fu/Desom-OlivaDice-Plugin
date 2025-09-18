@@ -40,7 +40,6 @@ dictTValue = {
     'tOldFail': '0',
     'tNewFail': '0',
     'tResult': '',
-    'tAtTarget': '',
     'tRollTimes': '1',
     'tMultiResults': '',
     'tExprDetail': ''

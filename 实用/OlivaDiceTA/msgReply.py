@@ -553,9 +553,6 @@ def unity_reply(plugin_event, Proc):
                     else:
                         dictTValue['tName'] = f'用户{target_user_id}'
                 
-                # 设置@目标信息
-                dictTValue['tAtTarget'] = f"@{dictTValue.get('tUserName01', '用户')}" if is_at else ''
-                
                 # 获取技能数据
                 pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(tmp_pcHash, hagId=tmp_hagID) if tmp_pc_name else {}
                 skill_valueTable = pc_skills.copy()
@@ -593,9 +590,9 @@ def unity_reply(plugin_event, Proc):
                 if tmp_template != None and 'customDefault' in tmp_template:
                     tmp_template_customDefault = tmp_template['customDefault']
                 
-                # 计算技能值
-                skill_value = 0
-                skill_detail = "0"
+                # 计算技能值（为1就代表裸放无燃尽）
+                skill_value = 1
+                skill_detail = "1"
                 if cleaned_expr:
                     # 使用replace_skills处理技能替换
                     skill_expr, skill_detail = replace_skills(
