@@ -1,0 +1,23 @@
+{
+    "name" : "OlivaDiceTA三角机构插件",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDiceTA",
+    "message_mode" : "old_string",
+    "info" : "三角机构骰点插件",
+    "version" : "1.0.0",
+    "svn" : 1,
+    "compatible_svn" : 100,
+    "priority" : 19990,
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        },
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}
