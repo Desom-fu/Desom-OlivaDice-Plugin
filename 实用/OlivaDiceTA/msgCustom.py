@@ -10,8 +10,8 @@ import OlivaDiceTA
 dictStrCustomDict = {}
 
 dictStrCustom = {
-    'strTAResult': '[{tName}]进行三角机构检定{tAtTarget}\n骰子: {tDiceResult}\n{tBurnout} {tSkillCheckReasult}{tChaosChange}',
-    'strTAResultMulti': '[{tName}]进行{tRollTimes}次三角机构检定{tAtTarget}\n{tMultiResults}{tChaosChange}',
+    'strTAResult': '[{tName}]进行三角机构检定\n骰子: {tDiceResult}\n{tBurnout} {tSkillCheckReasult}{tChaosChange}',
+    'strTAResultMulti': '[{tName}]进行{tRollTimes}次三角机构检定\n{tMultiResults}{tChaosChange}',
     'strTAResultAtOther': '[{tUserName}]帮[{tName}]进行三角机构检定\n骰子: {tDiceResult}\n{tBurnout} {tSkillCheckReasult}{tChaosChange}',
     'strTAResultMultiAtOther': '[{tUserName}]帮[{tName}]进行{tRollTimes}次三角机构检定\n{tMultiResults}{tChaosChange}',
     'strTAError': '三角机构检定错误: {tResult}\n请通过.help ta查看正确检定格式',
@@ -52,10 +52,10 @@ dictStrCustomNote = {
     'strTAResultMultiAtOther': '【.ta/.tr】指令\n代投多次三角机构检定',
     'strTAError': '【.ta/.tr】指令\n检定错误提示',
     'strTAInvalidSelection': '【.ta/.tr】指令\n无效选择提示',
-    'strCSShow': '【.cs/.tcs】指令\n显示混沌值',
-    'strCSChange': '【.cs/.tcs】指令\n混沌值变化',
-    'strFSShow': '【.fs/.tfs】指令\n显示现实改写失败次数',
-    'strFSChange': '【.fs/.tfs】指令\n现实改写失败次数变化'
+    'strCSShow': '【.tcs】指令\n显示混沌值',
+    'strCSChange': '【.tcs】指令\n混沌值变化',
+    'strFSShow': '【.tfs】指令\n显示现实改写失败次数',
+    'strFSChange': '【.tfs】指令\n现实改写失败次数变化'
 }
 
 dictHelpDocTemp = {
