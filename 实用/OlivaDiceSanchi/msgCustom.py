@@ -37,28 +37,26 @@ dictStrCustom = {
     'strTQHideShowAtOtherMore': '为[{tName}]进行暗中占卜',
     
     # .tqa 三尺之下检定相关消息
-    'strTQAResult': '[{tName}]进行三尺之下检定\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）→{tSuccessText}',
+    'strTQAResult': '[{tName}]进行三尺之下检定\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
     'strTQAHideShow': '[{tName}]进行了暗三尺之下检定',
-    'strTQAHide': '于群[{tGroupId}]中[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）→{tSuccessText}',
-    'strTQAAtOther': '[{tUserName}]帮[{tName}]进行三尺之下检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）→{tSuccessText}',
+    'strTQAHide': '于群[{tGroupId}]中[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
+    'strTQAAtOther': '[{tUserName}]帮[{tName}]进行三尺之下检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
     'strTQAHideShowAtOther': '[{tUserName}]帮[{tName}]进行了暗三尺之下检定',
-    'strTQAHideAtOther': '于群[{tGroupId}]中[{tUserName}]帮[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）→{tSuccessText}',
+    'strTQAHideAtOther': '于群[{tGroupId}]中[{tUserName}]帮[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
     'strTQAError': '三尺之下检定错误: {tResult}\n请使用[.help r]查看掷骰帮助，或使用[.help onedice]查看先进的OneDice标准。\n请通过.help sanchi查看正确检定格式',
     'strTQAFormatError': 'tqa命令格式错误，需要用#分隔属性和难度\n正确格式: .tqa 属性#难度',
     
     # .tqav 三尺之下对抗相关消息  
-    'strTQAVResult': '\n{tName}：{tMyAttrResult}{tMyTransformText}\n铜钱：{tMyCoinsResult} → 阳爻{tMyYangCount}个\n总计：{tMyYangCount}+{tMyAttrValue}={tMyTotal}\n\n{tName01}：{tOtherAttrResult}{tOtherTransformText}\n铜钱：{tOtherCoinsResult} → 阳爻{tOtherYangCount}个\n总计：{tOtherYangCount}+{tOtherAttrValue}={tOtherTotal}\n\n结果：{tContestResult}',
+    'strTQAVResult': '对抗检定：\n{tName}：{tMyAttrResult}{tMyTransformText}\n铜钱：{tMyCoinsResult} → 阳爻{tMyYangCount}个\n总计：{tMyYangCount}+{tMyAttrValue}={tMyTotal}\n\n{tName01}：{tOtherAttrResult}{tOtherTransformText}\n铜钱：{tOtherCoinsResult} → 阳爻{tOtherYangCount}个\n总计：{tOtherYangCount}+{tOtherAttrValue}={tOtherTotal}\n\n结果：{tContestResult}',
     'strTQAVError': '三尺之下对抗错误: {tResult}\n请使用[.help r]查看掷骰帮助，或使用[.help onedice]查看先进的OneDice标准。\n请通过.help sanchi查看正确对抗格式',
     'strTQAVNoAtError': 'tqav命令必须@对方才能使用\n正确格式: .tqav 自己属性#对方属性 @对方',
     'strTQAVFormatError': 'tqav命令格式错误，需要用#分隔自己和对方的参数\n正确格式: .tqav 自己属性#对方属性 @对方',
     
     # .摇卦 命数卦象相关消息
-    'strHexagramResult': '''[{tUserName}] 摇卦占卜完成
+    'strHexagramResult': '''[{tUserName}] 摇卦占卜完成：
 {tHexagramNum} {tHexagramName}
 {tHexagramDesc}
 ━━━ 卦 象 结 果 ━━━
-{tCoinResults}
-
 上卦：{tUpperBagua}
 下卦：{tLowerBagua}
 ━━━ 五 行 属 性 ━━━
@@ -127,18 +125,18 @@ dictTValue = {
     'tContestResult': '平手',
     
     # .摇卦 命数卦象相关
-    'tHexagramNum': '第一卦',
-    'tHexagramName': '乾为天',
-    'tHexagramDesc': '刚金折刃，刚亢独断必崩；化刚为柔，顺势分权则通。',
-    'tUpperBagua': '乾（☰）金',
-    'tLowerBagua': '乾（☰）金', 
-    'tCoinResults': '第1枚: —— （阳爻）\n第2枚: —— （阳爻）\n第3枚: —— （阳爻）\n第4枚: —— （阳爻）\n第5枚: —— （阳爻）\n第6枚: —— （阳爻）',
-    'tAttributes': '金: 3\n水: 3\n木: 3\n火: 3\n土: 3',
-    'tFluctuationResults': '本卦无波动属性',
-    'tLifespan': '3',
-    'tSpecial': '【天妒】：当你在投掷吉凶点数时，SG将获得结果中阴爻数量的凶点，最少为1。',
-    'tTraits': '刚毅果断但易独断专行',
-    'tNameExamples': '凌锋、昊阳',
+    'tHexagramNum': '',
+    'tHexagramName': '',
+    'tHexagramDesc': '',
+    'tUpperBagua': '',
+    'tLowerBagua': '', 
+    'tCoinResults': '',
+    'tAttributes': '',
+    'tFluctuationResults': '',
+    'tLifespan': '2',
+    'tSpecial': '',
+    'tTraits': '',
+    'tNameExamples': '',
     
     # 错误处理
     'tRollPara': '',
@@ -182,11 +180,11 @@ dictStrCustomNote = {
     'strHexagramError': '【.摇卦】指令\n摇卦失败错误',
     
     # 通用错误
-    'strCoinRollError': '通用\n铜钱投掷错误',
-    'strMyExprError': '通用\n自己表达式错误',
-    'strOtherExprError': '通用\n对方表达式错误',
-    'strAttrExprError': '通用\n属性表达式错误',
-    'strDifficultyExprError': '通用\n难度表达式错误'
+    'strCoinRollError': '【三尺通用】\n铜钱投掷错误',
+    'strMyExprError': '【三尺通用】\n自己表达式错误',
+    'strOtherExprError': '【三尺通用】\n对方表达式错误',
+    'strAttrExprError': '【三尺通用】\n属性表达式错误',
+    'strDifficultyExprError': '【三尺通用】\n难度表达式错误'
 }
 
 dictHelpDocTemp = {
@@ -285,5 +283,8 @@ dictHelpDocTemp = {
 - 阳爻：取高值（如"2-3"取3）
 
 例子：
-.摇卦    # 投掷六枚铜钱，生成命数卦象''',
+.摇卦    # 投掷六枚铜钱，生成卦象''',
+
+    '三尺': '&sanchi',
+    '三尺之下': '&sanchi'
 }

@@ -694,7 +694,7 @@ def unity_reply(plugin_event, Proc):
             if success:
                 tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
             else:
-                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAILED
+                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
             
             success_text = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, None, None)
             
@@ -833,11 +833,11 @@ def unity_reply(plugin_event, Proc):
             dictTValue['tUpperBagua'] = f"{upper_bagua['name']}（{upper_bagua['symbol']}）{upper_bagua['element']}"
             dictTValue['tLowerBagua'] = f"{lower_bagua['name']}（{lower_bagua['symbol']}）{lower_bagua['element']}"
             
-            # 生成铜钱结果显示
-            coin_result_lines = []
-            for i, display in enumerate(coin_display):
-                coin_result_lines.append(f"第{i+1}枚: {display}")
-            dictTValue['tCoinResults'] = '\n'.join(coin_result_lines)
+            # # 生成铜钱结果显示 - 注释掉没用
+            # coin_result_lines = []
+            # for i, display in enumerate(coin_display):
+            #     coin_result_lines.append(f"第{i+1}枚: {display}")
+            # dictTValue['tCoinResults'] = '\n'.join(coin_result_lines)
             
             # 生成最终五行属性
             attr_lines = []

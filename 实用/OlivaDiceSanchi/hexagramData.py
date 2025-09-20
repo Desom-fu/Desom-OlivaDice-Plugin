@@ -281,7 +281,7 @@ hexagram_data = {
         "name": "山火贲",
         "description": "彩焰焚身，文过饰非必虚；返素守拙，返朴归真则美。",
         "attributes": {
-            "金": 1, "water": "1-2", "木": 2, "火": 3, "土": "2-3"
+            "金": 1, "水": "1-2", "木": 2, "火": 3, "土": "2-3"
         },
         "lifespan": None,
         "special": None,
@@ -794,9 +794,6 @@ hexagram_data = {
         "upper": "101", "lower": "010"
     }
 }
-
-# 修正第22卦的水属性字段名错误
-hexagram_data[22]["attributes"]["水"] = hexagram_data[22]["attributes"].pop("water")
 
 def get_hexagram_by_coins(coins):
     """
