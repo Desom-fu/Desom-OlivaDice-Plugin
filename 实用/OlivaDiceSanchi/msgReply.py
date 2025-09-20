@@ -781,7 +781,7 @@ def unity_reply(plugin_event, Proc):
             else:
                 tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
             
-            success_text = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, None, None)
+            success_text = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, tmp_pcHash, tmp_pc_name)
             
             # 构建显示消息
             coins_display = '、'.join(results)

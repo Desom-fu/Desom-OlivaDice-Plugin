@@ -37,12 +37,12 @@ dictStrCustom = {
     'strTQHideShowAtOtherMore': '为[{tName}]进行暗中占卜',
     
     # .tqa 三尺之下检定相关消息
-    'strTQAResult': '[{tName}]进行三尺之下检定\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
+    'strTQAResult': '[{tName}]进行三尺之下检定\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个 {tSuccessText}',
     'strTQAHideShow': '[{tName}]进行了暗三尺之下检定',
-    'strTQAHide': '于群[{tGroupId}]中[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
-    'strTQAAtOther': '[{tUserName}]帮[{tName}]进行三尺之下检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
+    'strTQAHide': '于群[{tGroupId}]中[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个 {tSuccessText}',
+    'strTQAAtOther': '[{tUserName}]帮[{tName}]进行三尺之下检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个 {tSuccessText}',
     'strTQAHideShowAtOther': '[{tUserName}]帮[{tName}]进行了暗三尺之下检定',
-    'strTQAHideAtOther': '于群[{tGroupId}]中[{tUserName}]帮[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个（需要{tRequiredYang}个）{tSuccessText}',
+    'strTQAHideAtOther': '于群[{tGroupId}]中[{tUserName}]帮[{tName}]进行三尺之下暗检定:\n属性：{tAttrResult} 难度：{tDifficultyResult}\n{tLevelDesc}{tExtraDifficultyText}\n铜钱：{tCoinsResult}{tTransformText}\n阳爻：{tYangCount}个 {tSuccessText}',
     'strTQAError': '三尺之下检定错误: {tResult}\n请使用[.help r]查看掷骰帮助，或使用[.help onedice]查看先进的OneDice标准。\n请通过.help sanchi查看正确检定格式',
     'strTQAFormatError': 'tqa命令格式错误，需要用#分隔属性和难度\n正确格式: .tqa 属性#难度',
     
