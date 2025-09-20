@@ -21,18 +21,18 @@ import OlivaDiceSanchi
 dictStrCustomDict = {}
 
 dictStrCustom = {
-    'strTQResult': '[{tName}]进行占卜，掷出{tNumber}枚铜钱，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次',
-    'strTQResultMore': '[{tName}]进行占卜，掷了{tTime}次，每次掷出{tNumber}枚铜钱，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次',
-    'strTQError': '请输入1-100之间的数字进行占卜，例如: .tq3',
-    'strTQHide': '[{tName}]在群({tGroupId})中进行暗中占卜：\n掷出{tNumber}枚铜钱，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次',
+    'strTQResult': '[{tName}]进行占卜{tExprShow}，掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
+    'strTQResultMore': '[{tName}]进行占卜{tExprShow}，掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
+    'strTQError': '请输入正确的表达式或数字进行占卜，例如: .tq3 或 .tqb2+5',
+    'strTQHide': '[{tName}]在群({tGroupId})中进行暗中占卜{tExprShow}：\n掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
     'strTQHideShow': '[{tName}]进行暗中占卜',
-    'strTQHideMore': '[{tName}]在群({tGroupId})中进行暗中占卜：\n掷了{tTime}次，每次掷出{tNumber}枚铜钱，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次',
+    'strTQHideMore': '[{tName}]在群({tGroupId})中进行暗中占卜{tExprShow}：\n掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
     'strTQHideShowMore': '[{tName}]进行暗中占卜',
-    'strTQAtOther': '为[{tName}]进行占卜，掷出{tNumber}枚铜钱，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次',
-    'strTQAtOtherMore': '为[{tName}]进行占卜，掷了{tTime}次，每次掷出{tNumber}枚铜钱，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次',
-    'strTQHideAtOther': '[{tName}]在群({tGroupId})中的暗中占卜结果：\n掷出{tNumber}枚铜钱，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次',
+    'strTQAtOther': '为[{tName}]进行占卜{tExprShow}，掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
+    'strTQAtOtherMore': '为[{tName}]进行占卜{tExprShow}，掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
+    'strTQHideAtOther': '[{tName}]在群({tGroupId})中的暗中占卜结果{tExprShow}：\n掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
     'strTQHideShowAtOther': '为[{tName}]进行暗中占卜',
-    'strTQHideAtOtherMore': '[{tName}]在群({tGroupId})中的暗中占卜结果：\n掷了{tTime}次，每次掷出{tNumber}枚铜钱，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次',
+    'strTQHideAtOtherMore': '[{tName}]在群({tGroupId})中的暗中占卜结果{tExprShow}：\n掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
     'strTQHideShowAtOtherMore': '为[{tName}]进行暗中占卜'
 }
 
@@ -62,9 +62,19 @@ dictTValue = {}
 
 dictHelpDocTemp = {
     'tq': '''【阴阳投掷】
-.tq (h)(数字#)(数字) @其他人 进行阴阳投掷，若没有数值默认值为1
+.tq (h)(b数字)(p数字)(次数#)(表达式|数字) @其他人 进行阴阳投掷
+支持表达式和技能解析，例如：.tq3 或 .tq敏捷+5
+支持b/p转换：
+- b/b数字：将阴转换为阳（b2表示转换2个）
+- p/p数字：将阳转换为阴并增加铜钱（p2表示转换2个）
 可进行多次投掷，# 前代表投掷的次数
 添加h参数进行暗骰
 
-管理员可以为他人进行代骰'''
+管理员可以为他人进行代骰
+
+示例：
+.tq5 - 掷5枚铜钱
+.tqb3+2 - 掷3+2枚铜钱，将1个阴转换为阳
+.tqp2b1+敏捷 - 掷敏捷值枚铜钱，转换2个阳为阴、1个阴为阳
+.tq3#5 - 投掷3次，每次5枚铜钱'''
 }
