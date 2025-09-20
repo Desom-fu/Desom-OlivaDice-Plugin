@@ -16,7 +16,7 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 
 import OlivOS
 import OlivaDiceCore
-import OlivaDiceTaichi
+import OlivaDiceSanchi
 import os
 import json
 
@@ -32,18 +32,18 @@ def initMsgCustom(bot_info_dict):
     for bot_info_dict_this in bot_info_dict:
         if bot_info_dict_this not in OlivaDiceCore.msgCustom.dictStrCustomDict:
             OlivaDiceCore.msgCustom.dictStrCustomDict[bot_info_dict_this] = {}
-        for dictStrCustom_this in OlivaDiceTaichi.msgCustom.dictStrCustom:
+        for dictStrCustom_this in OlivaDiceSanchi.msgCustom.dictStrCustom:
             if dictStrCustom_this not in OlivaDiceCore.msgCustom.dictStrCustomDict[bot_info_dict_this]:
-                OlivaDiceCore.msgCustom.dictStrCustomDict[bot_info_dict_this][dictStrCustom_this] = OlivaDiceTaichi.msgCustom.dictStrCustom[dictStrCustom_this]
+                OlivaDiceCore.msgCustom.dictStrCustomDict[bot_info_dict_this][dictStrCustom_this] = OlivaDiceSanchi.msgCustom.dictStrCustom[dictStrCustom_this]
         if has_NativeGUI:
-            for dictStrCustomNote_this in OlivaDiceTaichi.msgCustom.dictStrCustomNote:
+            for dictStrCustomNote_this in OlivaDiceSanchi.msgCustom.dictStrCustomNote:
                 if dictStrCustomNote_this not in OlivaDiceNativeGUI.msgCustom.dictStrCustomNote:
-                    OlivaDiceNativeGUI.msgCustom.dictStrCustomNote[dictStrCustomNote_this] = OlivaDiceTaichi.msgCustom.dictStrCustomNote[dictStrCustomNote_this]
-        for dictHelpDoc_this in OlivaDiceTaichi.msgCustom.dictHelpDocTemp:
+                    OlivaDiceNativeGUI.msgCustom.dictStrCustomNote[dictStrCustomNote_this] = OlivaDiceSanchi.msgCustom.dictStrCustomNote[dictStrCustomNote_this]
+        for dictHelpDoc_this in OlivaDiceSanchi.msgCustom.dictHelpDocTemp:
             if dictHelpDoc_this not in OlivaDiceCore.helpDocData.dictHelpDoc[bot_info_dict_this]:
-                OlivaDiceCore.helpDocData.dictHelpDoc[bot_info_dict_this][dictHelpDoc_this] = OlivaDiceTaichi.msgCustom.dictHelpDocTemp[dictHelpDoc_this]
-    OlivaDiceCore.msgCustom.dictStrConst.update(OlivaDiceTaichi.msgCustom.dictStrConst)
-    OlivaDiceCore.msgCustom.dictGValue.update(OlivaDiceTaichi.msgCustom.dictGValue)
-    OlivaDiceCore.msgCustom.dictTValue.update(OlivaDiceTaichi.msgCustom.dictTValue)
+                OlivaDiceCore.helpDocData.dictHelpDoc[bot_info_dict_this][dictHelpDoc_this] = OlivaDiceSanchi.msgCustom.dictHelpDocTemp[dictHelpDoc_this]
+    OlivaDiceCore.msgCustom.dictStrConst.update(OlivaDiceSanchi.msgCustom.dictStrConst)
+    OlivaDiceCore.msgCustom.dictGValue.update(OlivaDiceSanchi.msgCustom.dictGValue)
+    OlivaDiceCore.msgCustom.dictTValue.update(OlivaDiceSanchi.msgCustom.dictTValue)
     if has_NativeGUI:
-        OlivaDiceNativeGUI.msgCustom.dictStrCustomNote.update(OlivaDiceTaichi.msgCustom.dictStrCustomNote)
+        OlivaDiceNativeGUI.msgCustom.dictStrCustomNote.update(OlivaDiceSanchi.msgCustom.dictStrCustomNote)

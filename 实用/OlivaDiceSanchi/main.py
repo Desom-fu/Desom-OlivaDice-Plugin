@@ -15,21 +15,21 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 '''
 
 import OlivOS
-import OlivaDiceTaichi
+import OlivaDiceSanchi
 import OlivaDiceCore
 
 class Event(object):
     def init(plugin_event, Proc):
-        OlivaDiceTaichi.msgReply.unity_init(plugin_event, Proc)
+        OlivaDiceSanchi.msgReply.unity_init(plugin_event, Proc)
 
     def init_after(plugin_event, Proc):
-        OlivaDiceTaichi.msgReply.data_init(plugin_event, Proc)
+        OlivaDiceSanchi.msgReply.data_init(plugin_event, Proc)
 
     def private_message(plugin_event, Proc):
-        OlivaDiceTaichi.msgReply.unity_reply(plugin_event, Proc)
+        OlivaDiceSanchi.msgReply.unity_reply(plugin_event, Proc)
 
     def group_message(plugin_event, Proc):
-        OlivaDiceTaichi.msgReply.unity_reply(plugin_event, Proc)
+        OlivaDiceSanchi.msgReply.unity_reply(plugin_event, Proc)
 
     def poke(plugin_event, Proc):
         pass

@@ -1,7 +1,7 @@
 {
     "name" : "OlivaDice阴阳模块",
     "author" : "Desom-fu",
-    "namespace" : "OlivaDiceTaichi",
+    "namespace" : "OlivaDiceSanchi",
     "message_mode" : "old_string",
     "info" : "本模块为OlivaDice的阴阳模块，实现了阴阳规则的功能。",
     "version" : "1.0.0",

@@ -16,7 +16,7 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 
 import OlivOS
 import OlivaDiceCore
-import OlivaDiceTaichi
+import OlivaDiceSanchi
 
 dictStrCustomDict = {}
 

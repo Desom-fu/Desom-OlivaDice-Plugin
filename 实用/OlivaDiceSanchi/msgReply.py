@@ -15,7 +15,7 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 '''
 
 import OlivOS
-import OlivaDiceTaichi
+import OlivaDiceSanchi
 import OlivaDiceCore
 
 import hashlib
@@ -28,7 +28,7 @@ def unity_init(plugin_event, Proc):
     pass
 
 def data_init(plugin_event, Proc):
-    OlivaDiceTaichi.msgCustomManager.initMsgCustom(Proc.Proc_data['bot_info_dict'])
+    OlivaDiceSanchi.msgCustomManager.initMsgCustom(Proc.Proc_data['bot_info_dict'])
 
 def unity_reply(plugin_event, Proc):
     OlivaDiceCore.userConfig.setMsgCount()
