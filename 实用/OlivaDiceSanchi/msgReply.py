@@ -1027,6 +1027,8 @@ def unity_reply(plugin_event, Proc):
             expr_show = None
             b_count = 0
             p_count = 0
+            u_count = 0
+            d_count = 0
             
             if tmp_reast_str:
                 if '#' in tmp_reast_str:

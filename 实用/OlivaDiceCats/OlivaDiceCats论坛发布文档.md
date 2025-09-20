@@ -2,11 +2,12 @@
 
 - **名称**​：喵影奇谋模块
 - ​**作者**​：Desom-fu
-- ​**版本**​：1.0.0
+- ​**版本**​：1.0.3
 - ​**兼容版本**​：理论兼容所有版本，但仅在最新版本测试过
 - ​**平台**​：理论支持全平台（仅在 QQ 部署测试过）
 - ​**操作系统**​：理论支持全系统（仅在 Windows Server 2019 上部署过）
 - **前置插件**：OlivaDiceCore
+- ​**喵影奇谋跑团官方群**​：1047473677（喵！）
 
 ---
 
@@ -15,26 +16,51 @@
 - 建议使用最新构建版`OlivaDiceCore`以获得最佳体验
 - 下载地址：https://github.com/OlivOS-Team/OlivaDiceCore/actions
 - （记得解压！）
+[upl-file uuid=71a33eee-928e-4e55-a52e-ca1118628e4d size=197kB]olivadicecore.zip[/upl-file]
 
 - 建议使用最新构建版`OlivaDiceNativeGUI`以获得最佳体验
 - 下载地址：https://github.com/Desom-fu/OlivaDiceNativeGUI/actions
 - （记得解压！）
+[upl-file uuid=7e860b49-2b94-427f-adc0-576df28df16f size=237kB]olivadicenativegui.zip[/upl-file]
 
-- 下载完毕后建议打开`OlivaDice 设置面板`的自定义回复，在回复词中的`配置回复模块`里面新增一行`OlivaDiceCats`（注意大小写要完全一致!）
+- （可选）建议使用最新构建版`OlivaDiceMaster`以获得最佳体验
+- 下载地址：https://github.com/Desom-fu/OlivaDiceMaster/actions
+- （记得解压！）
+[upl-file uuid=fe737573-ed31-499f-8830-9aeaed227877 size=31kB]olivadicemaster.zip[/upl-file]
+
+- 下载完毕后建议打开`OlivaDice 设置面板`的自定义回复，在回复词中的`配置恢复模块`里面新增一行`OlivaDiceCats`（注意大小写要完全一致!）
+![Image description](https://forum.olivos.run/assets/files/2025-09-15/1757915507-151947-image.png)
 
 ---
 
 ## 下载
 
 - ###### ​**插件包（记得解压！）** ​:
-[upl-file uuid=xxx size=xxkB]olivadice-cats.zip[/upl-file]
+[upl-file uuid=354b1409-d66a-4055-bcfb-f53fa9ac4c1a size=12kB]olivadicecats.zip[/upl-file]
 
 - ###### **喵影奇谋青果专用人物卡模板（解压！）** :
-[upl-file uuid=xxx size=xxkB]cats.zip[/upl-file]
+[upl-file uuid=06139bca-d90e-4bb4-a083-8c30c0f1fb88 size=2kB]cats.zip[/upl-file]
 
 ---
+## 2025.9.19 更新：
+- 上传了最新构建的`OlivaDiceCore`
+- 上传了最新构建的`OlivaDiceNativeGui`
+- 上传了最新构建的`OlivaDiceMaster`
+- 更新人物卡模板
 
 ## 更新日志
+## 2025.9.17 v1.0.3 更新：
+- 上传了最新构建的`OlivaDiceCore`
+- 上传了最新构建的`OlivaDiceNativeGui`
+- 支持新版本的`.hiy`指令（注，一定要更新最新版本，否则会报错！！！）
+
+## 2025.9.15 v1.0.2更新：
+- 优化帮助文档
+- 优化人物卡模板
+- 更新最新构建OlivaDiceCore
+
+## 2025.9.15 v1.0.1更新：
+- 删除一个已经废弃的自定义回复
 
 ## 2025.9.15 v1.0.0发布：
 - 喵影奇谋插件发布
@@ -218,7 +244,8 @@
 
 ## 截图示例
 
-
+![Image description](https://forum.olivos.run/assets/files/2025-09-15/1757905905-838246-image.png)
+![Image description](https://forum.olivos.run/assets/files/2025-09-15/1757905969-597107-image.png)
 
 ---
 
