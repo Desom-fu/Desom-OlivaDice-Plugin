@@ -71,7 +71,6 @@ def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
 def parse_bp_parameters(expr_str):
     """
     解析表达式中的b/p参数
-    采用与OlivaDiceCats插件相同的解析逻辑
     返回: cleaned_expr, b_count, p_count
     """
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
@@ -420,6 +419,17 @@ def unity_reply(plugin_event, Proc):
                                 rd.roll()
                                 if rd.resError is None:
                                     tq_number = max(1, min(100, int(rd.resInt)))
+                                    # 构建详细显示过程
+                                    if rd.resDetail and rd.resDetail != str(rd.resInt):
+                                        if expr_show == rd.resDetail:
+                                            expr_show = f"{expr_show}={tq_number}"
+                                        else:
+                                            expr_show = f"{expr_show}={rd.resDetail}={tq_number}"
+                                    else:
+                                        if expr_show != str(tq_number):
+                                            expr_show = f"{expr_show}={tq_number}"
+                                        else:
+                                            expr_show = str(tq_number)
                                 else:
                                     raise ValueError("表达式解析错误")
                             except:
@@ -444,6 +454,17 @@ def unity_reply(plugin_event, Proc):
                                 rd.roll()
                                 if rd.resError is None:
                                     tq_number = max(1, min(100, int(rd.resInt)))
+                                    # 构建详细显示过程
+                                    if rd.resDetail and rd.resDetail != str(rd.resInt):
+                                        if expr_show == rd.resDetail:
+                                            expr_show = f"{expr_show}={tq_number}"
+                                        else:
+                                            expr_show = f"{expr_show}={rd.resDetail}={tq_number}"
+                                    else:
+                                        if expr_show != str(tq_number):
+                                            expr_show = f"{expr_show}={tq_number}"
+                                        else:
+                                            expr_show = str(tq_number)
                                 else:
                                     raise ValueError("表达式解析错误")
                             except:
