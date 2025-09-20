@@ -204,16 +204,16 @@ def determine_tqa_success(attr_value, difficulty, yang_count):
     
     if diff < 0:  # 难度 < 属性值
         required_yang = 1
-        level_desc = "简单检定"
+        level_desc = "[一阳爻]"
     elif diff == 0:  # 难度 = 属性值
         required_yang = 2
-        level_desc = "标准检定"
+        level_desc = "[二阳爻]"
     elif diff <= 2:  # 难度 > 属性值，差值≤2
         required_yang = 3
-        level_desc = "困难检定"
+        level_desc = "[三阳爻]"
     else:  # 难度 > 属性值，差值>2
         required_yang = 3
-        level_desc = "极难检定（劣势）"
+        level_desc = "[三阳爻（劣势）]"
     
     success = yang_count >= required_yang
     return success, level_desc, required_yang
@@ -720,8 +720,8 @@ def unity_reply(plugin_event, Proc):
                     return
             
             # 计算难度值
-            difficulty_value = 5  # 默认难度
-            difficulty_expr_show = "5"
+            difficulty_value = 3  # 默认难度
+            difficulty_expr_show = "3"
             if difficulty_part:
                 try:
                     difficulty_processed_expr, difficulty_expr_show = replace_skills(difficulty_part, skill_valueTable, tmp_pcCardRule)
@@ -767,9 +767,17 @@ def unity_reply(plugin_event, Proc):
             # 判断检定结果
             success, level_desc, required_yang = determine_tqa_success(attr_value, difficulty_value, yang_count)
             
-            # 使用 OlivaDiceCore 的标准成功/失败文案
+            # 成功/失败文案
             if success:
-                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
+                if difficulty_value <= 3:
+                    # 普通成功
+                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
+                elif difficulty_value <= 6:
+                    # 困难成功  
+                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_HARD_SUCCESS
+                else:
+                    # 极难成功
+                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_EXTREME_HARD_SUCCESS
             else:
                 tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
             
