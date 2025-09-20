@@ -52,6 +52,27 @@ dictStrCustom = {
     'strTQAVNoAtError': 'tqav命令必须@对方才能使用\n正确格式: .tqav 自己属性#对方属性 @对方',
     'strTQAVFormatError': 'tqav命令格式错误，需要用#分隔自己和对方的参数\n正确格式: .tqav 自己属性#对方属性 @对方',
     
+    # .摇卦 命数卦象相关消息
+    'strHexagramResult': '''[{tUserName}] 摇卦占卜完成
+{tHexagramNum} {tHexagramName}
+{tHexagramDesc}
+━━━ 卦 象 结 果 ━━━
+{tCoinResults}
+
+上卦：{tUpperBagua}
+下卦：{tLowerBagua}
+━━━ 五 行 属 性 ━━━
+{tAttributes}
+━━━ 波 动 检 定 ━━━
+{tFluctuationResults}
+━━━ 角 色 信 息 ━━━
+寿数：{tLifespan}
+特殊能力：{tSpecial}
+角色特质：{tTraits}
+姓名范例：{tNameExamples}''',
+    
+    'strHexagramError': '摇卦失败：{tError}\n请重新尝试摇卦命令',
+    
     # 通用错误消息
     'strCoinRollError': '铜钱投掷出错',
     'strMyExprError': '自己的表达式解析错误: {tResult}',
@@ -67,12 +88,6 @@ dictGValue = {
 }
 
 dictTValue = {
-    # 基础用户信息
-    'tName': '用户',
-    'tUserName': '用户',
-    'tName01': '对方',
-    'tGroupId': '0',
-    
     # .tq 占卜相关
     'tExprShow': '',
     'tOriginalNumber': '3',
@@ -111,6 +126,20 @@ dictTValue = {
     'tOtherTransformText': '',
     'tContestResult': '平手',
     
+    # .摇卦 命数卦象相关
+    'tHexagramNum': '第一卦',
+    'tHexagramName': '乾为天',
+    'tHexagramDesc': '刚金折刃，刚亢独断必崩；化刚为柔，顺势分权则通。',
+    'tUpperBagua': '乾（☰）金',
+    'tLowerBagua': '乾（☰）金', 
+    'tCoinResults': '第1枚: —— （阳爻）\n第2枚: —— （阳爻）\n第3枚: —— （阳爻）\n第4枚: —— （阳爻）\n第5枚: —— （阳爻）\n第6枚: —— （阳爻）',
+    'tAttributes': '金: 3\n水: 3\n木: 3\n火: 3\n土: 3',
+    'tFluctuationResults': '本卦无波动属性',
+    'tLifespan': '3',
+    'tSpecial': '【天妒】：当你在投掷吉凶点数时，SG将获得结果中阴爻数量的凶点，最少为1。',
+    'tTraits': '刚毅果断但易独断专行',
+    'tNameExamples': '凌锋、昊阳',
+    
     # 错误处理
     'tRollPara': '',
     'tResult': ''
@@ -148,6 +177,10 @@ dictStrCustomNote = {
     'strTQAVNoAtError': '【.tqav】指令\n未@对方错误',
     'strTQAVFormatError': '【.tqav】指令\n格式错误',
     
+    # .摇卦 命数卦象相关
+    'strHexagramResult': '【.摇卦】指令\n摇卦占卜结果显示',
+    'strHexagramError': '【.摇卦】指令\n摇卦失败错误',
+    
     # 通用错误
     'strCoinRollError': '通用\n铜钱投掷错误',
     'strMyExprError': '通用\n自己表达式错误',
@@ -157,7 +190,21 @@ dictStrCustomNote = {
 }
 
 dictHelpDocTemp = {
-    'sanchi': '''【三尺之下铜钱卦】
+    'sanchi': '''【三尺之下】
+
+本系统包含以下功能模块：
+• .tq - 铜钱占卜
+• .tqa - 三尺之下检定  
+• .tqav - 三尺之下对抗
+• .摇卦 - 命数摇卦
+
+详细使用方法请输入：
+.help tq    - 查看铜钱占卜详情
+.help tqa   - 查看检定系统详情
+.help tqav  - 查看对抗系统详情
+.help 摇卦  - 查看命数摇卦详情''',
+
+    'tq': '''【三尺之下铜钱占卜】
 .tq(h)(b/p数字)(次数)#(铜钱数量或表达式)
 
 参数说明：
@@ -168,10 +215,15 @@ dictHelpDocTemp = {
 
 例子：
 .tq 5        # 投掷5枚铜钱
-.tq b2 力量   # 2个优势转换，铜钱数量为力量技能值
-.tq 3#p1 敏捷+5  # 3次投掷，1个劣势转换，每次投掷敏捷+5枚铜钱
+.tq b2 火   # 2个优势转换，铜钱数量为火技能值
+.tq 3#p1 水+5  # 3次投掷，1个劣势转换，每次投掷水+5枚铜钱
 
-【三尺之下检定】
+占卜结果：
+- 每枚铜钱显示阴爻或阳爻
+- 统计阴爻和阳爻总数
+- 支持优势/劣势转换''',
+
+    'tqa': '''【三尺之下检定】
 .tqa(h)(b/p数字)(属性表达式)#(难度表达式)(@其他人)
 
 检定规则：
@@ -180,12 +232,17 @@ dictHelpDocTemp = {
 - 难度 > 属性，差值≤2：3个阳爻成功（困难检定）
 - 难度 > 属性，差值>2：3个阳爻成功且自动增加劣势（极难检定）
 
-例子：
-.tqa 力量#15      # 力量检定，难度15
-.tqa b1 敏捷+5#12 # 优势检定，敏捷+5对抗难度12
-.tqa h 意志#困难 @张三  # 暗骰代骰意志检定
+参数说明：
+- h：暗骰检定
+- b/p数字：优势/劣势转换数量
+- @其他人：代替他人进行检定
 
-【三尺之下对抗】
+例子：
+.tqa 火#5      # 火检定，难度5
+.tqa b1 金+3#6 # 优势检定，金+3对抗难度6
+.tqa h 水#5 @张三  # 暗骰代骰意志检定''',
+
+    'tqav': '''【三尺之下对抗】
 .tqav(b/p数字)(自己属性)#(b/p数字)(对方属性)@对方
 
 对抗规则：
@@ -193,7 +250,40 @@ dictHelpDocTemp = {
 - 阳爻数量+属性值=最终对抗值
 - 数值高者获胜，相等为平手
 
+参数说明：
+- b/p数字：为对应属性添加优势/劣势
+- 必须@对方进行对抗
+- 支持属性表达式计算
+
 例子：
-.tqav 力量#敏捷 @张三     # 自己力量对抗张三敏捷
-.tqav b1 武艺+5#p1 剑法 @李四  # 优势武艺+5对抗李四劣势剑法''',
+.tqav 火#土 @张三     # 自己火对抗张三土
+.tqav b1 水+2#p1 金+1 @李四  # 优势水+2对抗李四劣势金+1
+
+对抗显示：
+- 双方属性值和铜钱结果
+- 详细的计算过程
+- 最终胜负结果''',
+
+    '摇卦': '''【命数摇卦】
+.摇卦
+
+摇卦功能：
+- 投掷六枚铜钱生成六十四卦之一
+- 自动计算五行属性（金、木、水、火、土）
+- 自动进行波动属性检定（如"2-3"格式属性）
+- 显示完整的卦象信息和角色特质
+
+卦象信息包含：
+- 卦名和卦象描述
+- 上卦下卦的八卦组合
+- 五行属性分配
+- 角色寿数和特殊能力
+- 性格特质和姓名范例
+
+波动检定：
+- 阴爻：取低值（如"2-3"取2）
+- 阳爻：取高值（如"2-3"取3）
+
+例子：
+.摇卦    # 投掷六枚铜钱，生成命数卦象''',
 }

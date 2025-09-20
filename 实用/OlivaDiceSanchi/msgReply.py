@@ -18,6 +18,9 @@ import OlivOS
 import OlivaDiceSanchi
 import OlivaDiceCore
 
+# 导入卦象数据
+from . import hexagramData
+
 import hashlib
 import time
 import traceback
@@ -739,6 +742,148 @@ def unity_reply(plugin_event, Proc):
                 else:
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAResult'], dictTValue)
                     replyMsg(plugin_event, tmp_reply_str)
+            return
+            
+        elif isMatchWordStart(tmp_reast_str, '摇卦', isCommand = True):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, '摇卦')
+            
+            # 摇卦功能实现
+            # 投掷六枚铜钱生成卦象
+            coins_result = []
+            for i in range(6):
+                rd = OlivaDiceCore.onedice.RD('1d2')
+                rd.roll()
+                if rd.resError is not None:
+                    dictTValue['tError'] = '投掷铜钱失败'
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                        dictStrCustom['strHexagramError'], 
+                        dictTValue
+                    )
+                    replyMsg(plugin_event, tmp_reply_str)
+                    return
+                
+                # 1为阴爻(反面)，2为阳爻(正面)
+                coin_result = 0 if rd.resMetaTuple[0] == 1 else 1
+                coins_result.append(coin_result)
+            
+            # 获取卦象编号
+            hexagram_num = hexagramData.get_hexagram_by_coins(coins_result)
+            if hexagram_num is None:
+                dictTValue['tError'] = '卦象生成失败'
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strHexagramError'], 
+                    dictTValue
+                )
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            # 解析波动属性
+            hex_data = hexagramData.hexagram_data[hexagram_num]
+            attributes = hex_data["attributes"]
+            final_attributes = {}
+            fluctuation_results = []
+            
+            for attr_name, attr_value in attributes.items():
+                attr_info = hexagramData.resolve_attribute_fluctuation(attr_value)
+                
+                if attr_info["type"] == "fixed":
+                    # 固定属性，直接使用
+                    final_attributes[attr_name] = attr_info["value"]
+                else:
+                    # 波动属性，需要投掷铜钱
+                    rd = OlivaDiceCore.onedice.RD('1d2')
+                    rd.roll()
+                    if rd.resError is not None:
+                        dictTValue['tError'] = '五行属性检定失败'
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strHexagramError'], 
+                            dictTValue
+                        )
+                        replyMsg(plugin_event, tmp_reply_str)
+                        return
+                    
+                    # 1为阴爻(取低值)，2为阳爻(取高值)
+                    if rd.resMetaTuple[0] == 1:  # 阴爻
+                        final_value = attr_info["low"]
+                        result_desc = f"{attr_name}为{attr_value}，投掷结果为阴爻，取低值{final_value}"
+                    else:  # 阳爻
+                        final_value = attr_info["high"]
+                        result_desc = f"{attr_name}为{attr_value}，投掷结果为阳爻，取高值{final_value}"
+                    
+                    final_attributes[attr_name] = final_value
+                    fluctuation_results.append(result_desc)
+            
+            # 获取上下卦信息
+            upper_bagua = hexagramData.get_bagua_info(hex_data["upper"])
+            lower_bagua = hexagramData.get_bagua_info(hex_data["lower"])
+            
+            # 生成铜钱显示（从下到上）
+            coin_display = []
+            for i in range(6):
+                if coins_result[i] == 0:
+                    coin_display.append("-- （阴爻）")
+                else:
+                    coin_display.append("— （阳爻）")
+            
+            # 填充模板变量
+            # tUserName 已在 unity_reply 函数开始时设置
+            dictTValue['tHexagramNum'] = f"第{hexagram_num}卦"
+            dictTValue['tHexagramName'] = hex_data["name"]
+            dictTValue['tHexagramDesc'] = hex_data["description"]
+            dictTValue['tUpperBagua'] = f"{upper_bagua['name']}（{upper_bagua['symbol']}）{upper_bagua['element']}"
+            dictTValue['tLowerBagua'] = f"{lower_bagua['name']}（{lower_bagua['symbol']}）{lower_bagua['element']}"
+            
+            # 生成铜钱结果显示
+            coin_result_lines = []
+            for i, display in enumerate(coin_display):
+                coin_result_lines.append(f"第{i+1}枚: {display}")
+            dictTValue['tCoinResults'] = '\n'.join(coin_result_lines)
+            
+            # 生成最终五行属性
+            attr_lines = []
+            for attr_name, attr_value in final_attributes.items():
+                attr_lines.append(f"{attr_name}: {attr_value}")
+            dictTValue['tAttributes'] = '；'.join(attr_lines)
+            
+            # 生成波动检定结果
+            if fluctuation_results:
+                dictTValue['tFluctuationResults'] = '\n'.join(fluctuation_results)
+            else:
+                dictTValue['tFluctuationResults'] = "本卦无波动属性"
+            
+            # 添加特殊能力和特质信息
+            if hex_data.get("special"):
+                dictTValue['tSpecial'] = hex_data["special"]
+            else:
+                dictTValue['tSpecial'] = "无特殊能力"
+            
+            # 计算寿数
+            if hex_data.get("lifespan") is not None:
+                # 乾为天卦和坤为地卦有固定寿数
+                dictTValue['tLifespan'] = str(hex_data["lifespan"])
+            else:
+                # 其他卦根据五行属性之和计算寿数
+                attr_sum = sum(final_attributes.values())
+                if attr_sum == 9:
+                    calculated_lifespan = 1
+                elif attr_sum == 10:
+                    calculated_lifespan = 2
+                elif attr_sum == 11:
+                    calculated_lifespan = 3
+                else:
+                    # 异常情况，使用默认值
+                    calculated_lifespan = 2
+                dictTValue['tLifespan'] = str(calculated_lifespan)
+            
+            dictTValue['tTraits'] = hex_data.get("traits", "")
+            dictTValue['tNameExamples'] = "、".join(hex_data.get("name_examples", []))
+            
+            # 发送回复
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                dictStrCustom['strHexagramResult'], 
+                dictTValue
+            )
+            replyMsg(plugin_event, tmp_reply_str)
             return
             
         elif isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
