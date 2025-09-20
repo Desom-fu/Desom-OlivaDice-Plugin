@@ -949,11 +949,11 @@ def unity_reply(plugin_event, Proc):
             else:
                 # 其他卦根据五行属性之和计算寿数
                 attr_sum = sum(final_attributes.values())
-                if attr_sum == 9:
+                if attr_sum <= 9:
                     calculated_lifespan = 1
                 elif attr_sum == 10:
                     calculated_lifespan = 2
-                elif attr_sum == 11:
+                elif attr_sum >= 11:
                     calculated_lifespan = 3
                 else:
                     # 异常情况，使用默认值
