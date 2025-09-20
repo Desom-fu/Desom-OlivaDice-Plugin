@@ -73,8 +73,8 @@ def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
 
 def parse_bp_parameters(expr_str):
     """
-    解析表达式中的b/p参数
-    返回: cleaned_expr, b_count, p_count
+    解析表达式中的b/p/u/d参数
+    返回: cleaned_expr, b_count, p_count, u_count, d_count
     """
     isMatchWordStart = OlivaDiceCore.msgReply.isMatchWordStart
     getMatchWordStartRight = OlivaDiceCore.msgReply.getMatchWordStartRight
@@ -82,6 +82,8 @@ def parse_bp_parameters(expr_str):
     
     b_count = 0  # b参数（阴转阳）
     p_count = 0  # p参数（阳转阴+铜钱）
+    u_count = 0  # u参数（增加铜钱）
+    d_count = 0  # d参数（减少铜钱）
     tmp_reast_str = expr_str
     
     # 循环处理所有参数
@@ -116,6 +118,34 @@ def parse_bp_parameters(expr_str):
                 tmp_reast_str = tmp_reast_str[1:]
             continue
         
+        # 处理u参数（增加铜钱）
+        elif isMatchWordStart(tmp_reast_str, 'u'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'u')
+            # 检查是否有数字指定，只取一位
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                u_count += int(tmp_reast_str[0])
+                tmp_reast_str = tmp_reast_str[1:]
+            else:
+                u_count += 1  # 默认为1
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 处理d参数（减少铜钱）
+        elif isMatchWordStart(tmp_reast_str, 'd'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'd')
+            # 检查是否有数字指定，只取一位
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                d_count += int(tmp_reast_str[0])
+                tmp_reast_str = tmp_reast_str[1:]
+            else:
+                d_count += 1  # 默认为1
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
         # 如果没有匹配到任何参数，跳出循环
         if tmp_reast_str == original_str:
             break
@@ -123,15 +153,19 @@ def parse_bp_parameters(expr_str):
     # 跳过空格并返回清理后的表达式
     cleaned_expr = skipSpaceStart(tmp_reast_str)
     
-    return cleaned_expr, b_count, p_count
+    return cleaned_expr, b_count, p_count, u_count, d_count
 
-def roll_three_coins_with_bp(b_count, p_count):
+def roll_three_coins_with_bp(b_count, p_count, u_count=0, d_count=0):
     """
-    投掷三枚铜钱并应用b/p转换
+    投掷三枚铜钱并应用b/p/u/d转换
     返回: (转换后的结果列表, 阳的个数, 转换说明列表, 额外增加的铜钱数)
     """
-    # 基础投掷3枚铜钱
-    rd = OlivaDiceCore.onedice.RD('3d2')
+    # 计算实际投掷的铜钱数量（基础3枚 + u增加 - d减少，但至少1枚）
+    base_coins = 3
+    actual_coins = max(1, base_coins + u_count - d_count)
+    
+    # 投掷铜钱
+    rd = OlivaDiceCore.onedice.RD(f'{actual_coins}d2')
     rd.roll()
     if rd.resError is not None:
         return None, 0, [], 0
@@ -146,6 +180,15 @@ def roll_three_coins_with_bp(b_count, p_count):
     
     # 应用b/p转换
     results, transformations, extra_coins = apply_bp_transformations(results, b_count, p_count)
+    
+    # 添加u/d参数的说明
+    if u_count > 0 or d_count > 0:
+        ud_desc = []
+        if u_count > 0:
+            ud_desc.append(f"增加{u_count}枚铜钱")
+        if d_count > 0:
+            ud_desc.append(f"减少{d_count}枚铜钱")
+        transformations.insert(0, f"铜钱调整：{'+'.join(ud_desc)}，实际投掷{actual_coins}枚")
     
     # 计算阳的个数
     yang_count = sum(1 for r in results if r.startswith('阳'))
@@ -183,6 +226,7 @@ def apply_bp_transformations(results, b_count, p_count):
     返回: (转换后的结果列表, 转换说明列表, 额外增加的铜钱数)
     
     劣势规则：每个p转换会增加一枚标记为(劣势)的铜钱，且劣势铜钱投出的阳也可以被继续转换
+    优势规则：优势转换会在劣势转换完成后继续处理剩余的优势
     """
     if b_count <= 0 and p_count <= 0:
         return results, [], 0
@@ -192,19 +236,22 @@ def apply_bp_transformations(results, b_count, p_count):
     transformations = []
     extra_coins = 0
     
-    # 执行b转换（阴转阳）
+    # 记录剩余的转换次数
+    remaining_b = b_count
+    remaining_p = p_count
+    
+    # 第一轮：执行初始b转换（阴转阳）
     yin_indices = [i for i, r in enumerate(new_results) if r.startswith('阴')]
-    actual_b = min(b_count, len(yin_indices))
-    if actual_b > 0:
+    initial_b = min(remaining_b, len(yin_indices))
+    if initial_b > 0:
         # 随机选择要转换的阴
-        selected_yin = random.sample(yin_indices, actual_b)
+        selected_yin = random.sample(yin_indices, initial_b)
         for idx in selected_yin:
             new_results[idx] = '阳(阴)'
             transformations.append(f"位置{idx+1}: 阴→阳")
+        remaining_b -= initial_b
     
-    # 执行p转换（阳转阴+劣势铜钱）
-    # 需要考虑劣势可以叠加，所以要循环处理每个p转换
-    remaining_p = p_count
+    # 第二轮：执行p转换（阳转阴+劣势铜钱）
     while remaining_p > 0:
         # 获取当前所有阳的位置（包括新增加的劣势阳）
         yang_indices = [i for i, r in enumerate(new_results) if r.startswith('阳')]
@@ -234,6 +281,36 @@ def apply_bp_transformations(results, b_count, p_count):
             new_results.append(coin_result)
         
         remaining_p -= actual_p
+    
+    # 第三轮：如果还有剩余的b转换，继续处理新产生的阴爻
+    while remaining_b > 0:
+        # 获取当前所有阴的位置（包括劣势转换产生的新阴爻）
+        yin_indices = [i for i, r in enumerate(new_results) if r.startswith('阴')]
+        
+        if len(yin_indices) == 0:
+            # 没有阴可以转换了，退出循环
+            break
+        
+        # 转换剩余的阴
+        actual_b = min(remaining_b, len(yin_indices))
+        if actual_b > 0:
+            # 随机选择要转换的阴
+            selected_yin = random.sample(yin_indices, actual_b)
+            for idx in selected_yin:
+                old_value = new_results[idx]
+                # 保留原有的标记
+                if '(劣势)' in old_value and '(阳)' in old_value:
+                    new_results[idx] = '阳(阴)(阳)(劣势)'
+                elif '(劣势)' in old_value:
+                    new_results[idx] = '阳(阴)(劣势)'
+                elif '(阳)' in old_value:
+                    new_results[idx] = '阳(阴)(阳)'
+                else:
+                    new_results[idx] = '阳(阴)'
+                transformations.append(f"位置{idx+1}: 阴→阳")
+            remaining_b -= actual_b
+        else:
+            break
     
     return new_results, transformations, extra_coins
 
@@ -445,9 +522,9 @@ def unity_reply(plugin_event, Proc):
             other_part = parts[1].strip()
             
             # 解析自己的参数
-            my_part_cleaned, my_b_count, my_p_count = parse_bp_parameters(my_part)
+            my_part_cleaned, my_b_count, my_p_count, my_u_count, my_d_count = parse_bp_parameters(my_part)
             # 解析对方的参数
-            other_part_cleaned, other_b_count, other_p_count = parse_bp_parameters(other_part)
+            other_part_cleaned, other_b_count, other_p_count, other_u_count, other_d_count = parse_bp_parameters(other_part)
             
             # 计算自己的属性值
             my_value = 0
@@ -510,8 +587,8 @@ def unity_reply(plugin_event, Proc):
                     return
             
             # 双方投掷铜钱
-            my_results, my_yang_count, my_transformations, my_extra_coins = roll_three_coins_with_bp(my_b_count, my_p_count)
-            other_results, other_yang_count, other_transformations, other_extra_coins = roll_three_coins_with_bp(other_b_count, other_p_count)
+            my_results, my_yang_count, my_transformations, my_extra_coins = roll_three_coins_with_bp(my_b_count, my_p_count, my_u_count, my_d_count)
+            other_results, other_yang_count, other_transformations, other_extra_coins = roll_three_coins_with_bp(other_b_count, other_p_count, other_u_count, other_d_count)
             
             if my_results is None or other_results is None:
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCoinRollError'], dictTValue)
@@ -597,8 +674,8 @@ def unity_reply(plugin_event, Proc):
                 flag_hide = True
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             
-            # 解析b/p参数
-            tmp_reast_str, b_count, p_count = parse_bp_parameters(tmp_reast_str)
+            # 解析b/p/u/d参数
+            tmp_reast_str, b_count, p_count, u_count, d_count = parse_bp_parameters(tmp_reast_str)
             
             # 解析表达式和难度
             if '#' not in tmp_reast_str:
@@ -681,7 +758,7 @@ def unity_reply(plugin_event, Proc):
                 p_count += 1  # 自动增加一个劣势
             
             # 投掷铜钱
-            results, yang_count, transformations, extra_coins = roll_three_coins_with_bp(b_count, p_count)
+            results, yang_count, transformations, extra_coins = roll_three_coins_with_bp(b_count, p_count, u_count, d_count)
             if results is None:
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCoinRollError'], dictTValue)
                 replyMsg(plugin_event, tmp_reply_str)
@@ -957,8 +1034,8 @@ def unity_reply(plugin_event, Proc):
                             # 前半部分是表达式，按1次处理
                             tq_times = 1
                     
-                    # 在后半部分解析b/p参数
-                    back_part, b_count, p_count = parse_bp_parameters(back_part)
+                    # 在后半部分解析b/p/u/d参数
+                    back_part, b_count, p_count, u_count, d_count = parse_bp_parameters(back_part)
                     
                     # 处理后半部分剩余的（铜钱数）
                     if back_part:
@@ -999,8 +1076,8 @@ def unity_reply(plugin_event, Proc):
                                 replyMsg(plugin_event, tmp_reply_str)
                                 return
                 else:
-                    # 没有#号的情况，在整个字符串中解析b/p参数
-                    tmp_reast_str, b_count, p_count = parse_bp_parameters(tmp_reast_str)
+                    # 没有#号的情况，在整个字符串中解析b/p/u/d参数
+                    tmp_reast_str, b_count, p_count, u_count, d_count = parse_bp_parameters(tmp_reast_str)
                     
                     if tmp_reast_str:
                         if tmp_reast_str.isdigit():
@@ -1043,6 +1120,10 @@ def unity_reply(plugin_event, Proc):
             # 限制次数
             if tq_times > 10:
                 tq_times = 10
+            
+            # 应用u/d参数调整铜钱数量
+            tq_number = max(1, tq_number + u_count - d_count)
+            
             # 校验铜钱数
             if tq_number < 1 or tq_number > 100:
                 dictTValue['tResult'] = f"铜钱数量{tq_number}超出范围，请使用1-100之间的数值"
