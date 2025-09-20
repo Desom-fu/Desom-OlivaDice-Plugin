@@ -122,6 +122,56 @@ def parse_bp_parameters(expr_str):
     
     return cleaned_expr, b_count, p_count
 
+def roll_three_coins_with_bp(b_count, p_count):
+    """
+    投掷三枚铜钱并应用b/p转换
+    返回: (转换后的结果列表, 阳的个数, 转换说明列表, 额外增加的铜钱数)
+    """
+    # 基础投掷3枚铜钱
+    rd = OlivaDiceCore.onedice.RD('3d2')
+    rd.roll()
+    if rd.resError is not None:
+        return None, 0, [], 0
+    
+    # 基础投掷结果
+    results = []
+    for res in rd.resMetaTuple:
+        if res == 1:
+            results.append('阴')
+        else:
+            results.append('阳')
+    
+    # 应用b/p转换
+    results, transformations, extra_coins = apply_bp_transformations(results, b_count, p_count)
+    
+    # 计算阳的个数
+    yang_count = sum(1 for r in results if r.startswith('阳'))
+    
+    return results, yang_count, transformations, extra_coins
+
+def determine_tqa_success(attr_value, difficulty, yang_count):
+    """
+    根据三尺之下规则判断tqa检定是否成功
+    返回: (是否成功, 成功等级描述)
+    """
+    diff = difficulty - attr_value
+    
+    if diff < 0:  # 难度 < 属性值
+        required_yang = 1
+        level_desc = "简单检定"
+    elif diff == 0:  # 难度 = 属性值
+        required_yang = 2
+        level_desc = "标准检定"
+    elif diff <= 2:  # 难度 > 属性值，差值≤2
+        required_yang = 3
+        level_desc = "困难检定"
+    else:  # 难度 > 属性值，差值>2
+        required_yang = 3
+        level_desc = "极难检定（劣势）"
+    
+    success = yang_count >= required_yang
+    return success, level_desc, required_yang
+
 def apply_bp_transformations(results, b_count, p_count):
     """
     应用b/p转换到铜钱卦结果
@@ -333,7 +383,365 @@ def unity_reply(plugin_event, Proc):
         #此群关闭时中断处理
         if not flag_groupEnable and not flag_force_reply:
             return
-        if isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
+        if isMatchWordStart(tmp_reast_str, 'tqav', isCommand = True):
+            # tqav命令必须at对方才能进行
+            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            if not is_at or not at_user_id:
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAVNoAtError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'tqav')
+            tmp_reast_str = skipSpaceStart(tmp_reast_str)
+            
+            # 获取自己和对方的人物卡信息
+            my_pc_id = plugin_event.data.user_id
+            other_pc_id = at_user_id
+            tmp_pc_platform = plugin_event.platform['platform']
+            
+            # 自己的人物卡
+            my_pcHash = OlivaDiceCore.pcCard.getPcHash(my_pc_id, tmp_pc_platform)
+            my_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(my_pcHash, tmp_hagID)
+            my_pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(my_pcHash, hagId=tmp_hagID) if my_pc_name else {}
+            my_skill_valueTable = my_pc_skills.copy()
+            
+            # 对方的人物卡
+            other_pcHash = OlivaDiceCore.pcCard.getPcHash(other_pc_id, tmp_pc_platform)
+            other_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(other_pcHash, tmp_hagID)
+            other_pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(other_pcHash, hagId=tmp_hagID) if other_pc_name else {}
+            other_skill_valueTable = other_pc_skills.copy()
+            
+            # 获取人物卡规则
+            tmp_pcCardRule = 'default'
+            if my_pc_name:
+                tmp_pcCardRule_new = OlivaDiceCore.pcCard.pcCardDataGetTemplateKey(my_pcHash, my_pc_name)
+                if tmp_pcCardRule_new:
+                    tmp_pcCardRule = tmp_pcCardRule_new
+            
+            # 设置名称
+            if my_pc_name:
+                dictTValue['tName'] = my_pc_name
+            else:
+                res = plugin_event.get_stranger_info(user_id=my_pc_id)
+                dictTValue['tName'] = res['data']['name'] if res else f'用户{my_pc_id}'
+            
+            if other_pc_name:
+                dictTValue['tName01'] = other_pc_name
+            else:
+                res = plugin_event.get_stranger_info(user_id=other_pc_id)
+                dictTValue['tName01'] = res['data']['name'] if res else f'用户{other_pc_id}'
+            
+            # 解析参数格式：(b/p数字)(表达式)#(b/p数字)(表达式)
+            if '#' not in tmp_reast_str:
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAVFormatError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            parts = tmp_reast_str.split('#', 1)
+            my_part = parts[0].strip()
+            other_part = parts[1].strip()
+            
+            # 解析自己的参数
+            my_part_cleaned, my_b_count, my_p_count = parse_bp_parameters(my_part)
+            # 解析对方的参数
+            other_part_cleaned, other_b_count, other_p_count = parse_bp_parameters(other_part)
+            
+            # 计算自己的属性值
+            my_value = 0
+            my_expr_show = "0"
+            if my_part_cleaned:
+                try:
+                    my_processed_expr, my_expr_show = replace_skills(my_part_cleaned, my_skill_valueTable, tmp_pcCardRule)
+                    rd_my = OlivaDiceCore.onedice.RD(my_processed_expr)
+                    rd_my.roll()
+                    if rd_my.resError is None:
+                        my_value = int(rd_my.resInt)
+                        # 构建详细显示过程
+                        if rd_my.resDetail and rd_my.resDetail != str(rd_my.resInt):
+                            if my_expr_show == rd_my.resDetail:
+                                my_expr_show = f"{my_expr_show}={my_value}"
+                            else:
+                                my_expr_show = f"{my_expr_show}={rd_my.resDetail}={my_value}"
+                        else:
+                            if my_expr_show != str(my_value):
+                                my_expr_show = f"{my_expr_show}={my_value}"
+                except Exception as e:
+                    dictTValue['tRollPara'] = my_part_cleaned
+                    if 'rd_my' in locals() and hasattr(rd_my, 'resError') and rd_my.resError:
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_my.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd_my.resError)
+                    else:
+                        error_msg = str(e)
+                    dictTValue['tResult'] = error_msg
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strMyExprError'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+                    return
+            
+            # 计算对方的属性值
+            other_value = 0
+            other_expr_show = "0"
+            if other_part_cleaned:
+                try:
+                    other_processed_expr, other_expr_show = replace_skills(other_part_cleaned, other_skill_valueTable, tmp_pcCardRule)
+                    rd_other = OlivaDiceCore.onedice.RD(other_processed_expr)
+                    rd_other.roll()
+                    if rd_other.resError is None:
+                        other_value = int(rd_other.resInt)
+                        # 构建详细显示过程
+                        if rd_other.resDetail and rd_other.resDetail != str(rd_other.resInt):
+                            if other_expr_show == rd_other.resDetail:
+                                other_expr_show = f"{other_expr_show}={other_value}"
+                            else:
+                                other_expr_show = f"{other_expr_show}={rd_other.resDetail}={other_value}"
+                        else:
+                            if other_expr_show != str(other_value):
+                                other_expr_show = f"{other_expr_show}={other_value}"
+                except Exception as e:
+                    dictTValue['tRollPara'] = other_part_cleaned
+                    if 'rd_other' in locals() and hasattr(rd_other, 'resError') and rd_other.resError:
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_other.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd_other.resError)
+                    else:
+                        error_msg = str(e)
+                    dictTValue['tResult'] = error_msg
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strOtherExprError'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+                    return
+            
+            # 双方投掷铜钱
+            my_results, my_yang_count, my_transformations, my_extra_coins = roll_three_coins_with_bp(my_b_count, my_p_count)
+            other_results, other_yang_count, other_transformations, other_extra_coins = roll_three_coins_with_bp(other_b_count, other_p_count)
+            
+            if my_results is None or other_results is None:
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCoinRollError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            # 计算最终对抗值
+            my_total = my_yang_count + my_value
+            other_total = other_yang_count + other_value
+            
+            # 判断胜负
+            if my_total > other_total:
+                result_desc = f"{dictTValue['tName']}获胜"
+            elif my_total < other_total:
+                result_desc = f"{dictTValue['tName01']}获胜"
+            else:
+                result_desc = "平手"
+            
+            # 设置模板变量
+            dictTValue['tMyAttrResult'] = my_expr_show
+            dictTValue['tMyAttrValue'] = str(my_value)
+            dictTValue['tMyCoinsResult'] = '、'.join(my_results)
+            dictTValue['tMyYangCount'] = str(my_yang_count)
+            dictTValue['tMyTotal'] = str(my_total)
+            dictTValue['tMyTransformText'] = f"（优势{my_b_count}/劣势{my_p_count}转换）" if (my_b_count > 0 or my_p_count > 0) else ""
+            
+            dictTValue['tOtherAttrResult'] = other_expr_show
+            dictTValue['tOtherAttrValue'] = str(other_value)
+            dictTValue['tOtherCoinsResult'] = '、'.join(other_results)
+            dictTValue['tOtherYangCount'] = str(other_yang_count)
+            dictTValue['tOtherTotal'] = str(other_total)
+            dictTValue['tOtherTransformText'] = f"（优势{other_b_count}/劣势{other_p_count}转换）" if (other_b_count > 0 or other_p_count > 0) else ""
+            
+            dictTValue['tContestResult'] = result_desc
+            
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAVResult'], dictTValue)
+            replyMsg(plugin_event, tmp_reply_str)
+            return
+            
+        elif isMatchWordStart(tmp_reast_str, 'tqa', isCommand = True):
+            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            if is_at and not at_user_id:
+                return
+            
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'tqa')
+            tmp_reast_str = skipSpaceStart(tmp_reast_str)
+            
+            # 获取人物卡信息
+            tmp_pc_id = at_user_id if at_user_id else plugin_event.data.user_id
+            tmp_pc_platform = plugin_event.platform['platform']
+            tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(tmp_pc_id, tmp_pc_platform)
+            tmp_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
+            
+            # 获取人物卡规则
+            tmp_pcCardRule = 'default'
+            tmp_pcCardRule_new = OlivaDiceCore.pcCard.pcCardDataGetTemplateKey(tmp_pcHash, tmp_pc_name)
+            if tmp_pcCardRule_new:
+                tmp_pcCardRule = tmp_pcCardRule_new
+            
+            if tmp_pc_name:
+                dictTValue['tName'] = tmp_pc_name
+            else:
+                res = plugin_event.get_stranger_info(user_id=tmp_pc_id)
+                dictTValue['tName'] = res['data']['name'] if res else f'用户{tmp_pc_id}'
+            
+            # 获取技能数据
+            pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(tmp_pcHash, hagId=tmp_hagID) if tmp_pc_name else {}
+            skill_valueTable = pc_skills.copy()
+            if tmp_pc_name:
+                skill_valueTable.update(
+                    OlivaDiceCore.pcCard.pcCardDataGetTemplateDataByKey(
+                        pcHash=tmp_pcHash,
+                        pcCardName=tmp_pc_name,
+                        dataKey='mappingRecord',
+                        resDefault={}
+                    )
+                )
+            
+            # 解析h参数（暗骰）
+            flag_hide = False
+            if isMatchWordStart(tmp_reast_str, 'h'):
+                tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'h')
+                flag_hide = True
+            tmp_reast_str = skipSpaceStart(tmp_reast_str)
+            
+            # 解析b/p参数
+            tmp_reast_str, b_count, p_count = parse_bp_parameters(tmp_reast_str)
+            
+            # 解析表达式和难度
+            if '#' not in tmp_reast_str:
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAFormatError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            parts = tmp_reast_str.split('#', 1)
+            attr_part = parts[0].strip()
+            difficulty_part = parts[1].strip()
+            
+            # 计算属性值
+            attr_value = 0
+            attr_expr_show = "0"
+            if attr_part:
+                try:
+                    attr_processed_expr, attr_expr_show = replace_skills(attr_part, skill_valueTable, tmp_pcCardRule)
+                    rd_attr = OlivaDiceCore.onedice.RD(attr_processed_expr)
+                    rd_attr.roll()
+                    if rd_attr.resError is None:
+                        attr_value = int(rd_attr.resInt)
+                        # 构建详细显示过程
+                        if rd_attr.resDetail and rd_attr.resDetail != str(rd_attr.resInt):
+                            if attr_expr_show == rd_attr.resDetail:
+                                attr_expr_show = f"{attr_expr_show}={attr_value}"
+                            else:
+                                attr_expr_show = f"{attr_expr_show}={rd_attr.resDetail}={attr_value}"
+                        else:
+                            if attr_expr_show != str(attr_value):
+                                attr_expr_show = f"{attr_expr_show}={attr_value}"
+                    else:
+                        raise ValueError("属性表达式解析错误")
+                except Exception as e:
+                    dictTValue['tRollPara'] = attr_part
+                    if hasattr(rd_attr, 'resError') and rd_attr.resError:
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_attr.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd_attr.resError)
+                    else:
+                        error_msg = str(e)
+                    dictTValue['tResult'] = error_msg
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strAttrExprError'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+                    return
+            
+            # 计算难度值
+            difficulty_value = 5  # 默认难度
+            difficulty_expr_show = "5"
+            if difficulty_part:
+                try:
+                    difficulty_processed_expr, difficulty_expr_show = replace_skills(difficulty_part, skill_valueTable, tmp_pcCardRule)
+                    rd_difficulty = OlivaDiceCore.onedice.RD(difficulty_processed_expr)
+                    rd_difficulty.roll()
+                    if rd_difficulty.resError is None:
+                        difficulty_value = int(rd_difficulty.resInt)
+                        # 构建详细显示过程
+                        if rd_difficulty.resDetail and rd_difficulty.resDetail != str(rd_difficulty.resInt):
+                            if difficulty_expr_show == rd_difficulty.resDetail:
+                                difficulty_expr_show = f"{difficulty_expr_show}={difficulty_value}"
+                            else:
+                                difficulty_expr_show = f"{difficulty_expr_show}={rd_difficulty.resDetail}={difficulty_value}"
+                        else:
+                            if difficulty_expr_show != str(difficulty_value):
+                                difficulty_expr_show = f"{difficulty_expr_show}={difficulty_value}"
+                    else:
+                        raise ValueError("难度表达式解析错误")
+                except Exception as e:
+                    dictTValue['tRollPara'] = difficulty_part
+                    if hasattr(rd_difficulty, 'resError') and rd_difficulty.resError:
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_difficulty.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd_difficulty.resError)
+                    else:
+                        error_msg = str(e)
+                    dictTValue['tResult'] = error_msg
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strDifficultyExprError'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+                    return
+            
+            # 判断是否需要劣势检定
+            diff = difficulty_value - attr_value
+            need_extra_disadvantage = diff > 2
+            if need_extra_disadvantage:
+                p_count += 1  # 自动增加一个劣势
+            
+            # 投掷铜钱
+            results, yang_count, transformations, extra_coins = roll_three_coins_with_bp(b_count, p_count)
+            if results is None:
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCoinRollError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+                return
+            
+            # 判断检定结果
+            success, level_desc, required_yang = determine_tqa_success(attr_value, difficulty_value, yang_count)
+            
+            # 使用 OlivaDiceCore 的标准成功/失败文案
+            if success:
+                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
+            else:
+                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAILED
+            
+            success_text = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, None, None)
+            
+            # 构建显示消息
+            coins_display = '、'.join(results)
+            transform_text = ""
+            if b_count > 0 or p_count > 0:
+                transform_parts = []
+                if b_count > 0:
+                    transform_parts.append(f"优势{b_count}")
+                if p_count > 0:
+                    transform_parts.append(f"劣势{p_count}")
+                transform_text = f"（{'/'.join(transform_parts)}转换）"
+            
+            extra_difficulty_text = ""
+            if need_extra_disadvantage:
+                extra_difficulty_text = "（差值>2，自动增加劣势）"
+            
+            dictTValue['tAttrResult'] = attr_expr_show
+            dictTValue['tDifficultyResult'] = difficulty_expr_show
+            dictTValue['tCoinsResult'] = coins_display
+            dictTValue['tYangCount'] = str(yang_count)
+            dictTValue['tRequiredYang'] = str(required_yang)
+            dictTValue['tLevelDesc'] = level_desc
+            dictTValue['tTransformText'] = transform_text
+            dictTValue['tExtraDifficultyText'] = extra_difficulty_text
+            dictTValue['tSuccessText'] = success_text
+            
+            # 根据是否暗骰和代骰选择回复方式
+            if is_at:
+                if flag_hide and flag_is_from_group:
+                    dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAHideAtOther'], dictTValue)
+                    replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAHideShowAtOther'], dictTValue))
+                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                else:
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAAtOther'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+            else:
+                if flag_hide and flag_is_from_group:
+                    dictTValue['tGroupId'] = str(plugin_event.data.group_id)
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAHide'], dictTValue)
+                    replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAHideShow'], dictTValue))
+                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                else:
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAResult'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str)
+            return
+            
+        elif isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
             is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
             if is_at and not at_user_id:
                 return
@@ -432,7 +840,13 @@ def unity_reply(plugin_event, Proc):
                                             expr_show = str(tq_number)
                                 else:
                                     raise ValueError("表达式解析错误")
-                            except:
+                            except Exception as e:
+                                dictTValue['tRollPara'] = back_part
+                                if hasattr(rd, 'resError') and rd.resError:
+                                    error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd.resError)
+                                else:
+                                    error_msg = str(e)
+                                dictTValue['tResult'] = error_msg
                                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
                                     dictStrCustom['strTQError'], 
                                     dictTValue
@@ -467,7 +881,13 @@ def unity_reply(plugin_event, Proc):
                                             expr_show = str(tq_number)
                                 else:
                                     raise ValueError("表达式解析错误")
-                            except:
+                            except Exception as e:
+                                dictTValue['tRollPara'] = tmp_reast_str
+                                if hasattr(rd, 'resError') and rd.resError:
+                                    error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd.resError)
+                                else:
+                                    error_msg = str(e)
+                                dictTValue['tResult'] = error_msg
                                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
                                     dictStrCustom['strTQError'], 
                                     dictTValue
@@ -480,6 +900,7 @@ def unity_reply(plugin_event, Proc):
                 tq_times = 10
             # 校验铜钱数
             if tq_number < 1 or tq_number > 100:
+                dictTValue['tResult'] = f"铜钱数量{tq_number}超出范围，请使用1-100之间的数值"
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
                     dictStrCustom['strTQError'], 
                     dictTValue
@@ -488,6 +909,7 @@ def unity_reply(plugin_event, Proc):
                 return
             # 校验次数
             if tq_times < 1 or tq_times > 10:
+                dictTValue['tResult'] = f"投掷次数{tq_times}超出范围，请使用1-10之间的数值"
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
                     dictStrCustom['strTQError'], 
                     dictTValue
@@ -501,6 +923,9 @@ def unity_reply(plugin_event, Proc):
                 rd = OlivaDiceCore.onedice.RD(f'{tq_number}d2')
                 rd.roll()
                 if rd.resError is not None:
+                    dictTValue['tRollPara'] = f'{tq_number}d2'
+                    error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd.resError)
+                    dictTValue['tResult'] = f"铜钱投掷错误: {error_msg}"
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
                         dictStrCustom['strTQError'], 
                         dictTValue
@@ -607,7 +1032,8 @@ def unity_reply(plugin_event, Proc):
                     rd = OlivaDiceCore.onedice.RD(f'{tq_number}d2')
                     rd.roll()
                     if rd.resError is not None:
-                        result_list.append(f'第{i+1}次：铜钱卦出错')
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd.resError, dictStrCustom, dictTValue) if hasattr(OlivaDiceCore.msgReplyModel, 'get_SkillCheckError') else str(rd.resError)
+                        result_list.append(f'第{i+1}次：铜钱卦出错 - {error_msg}')
                         continue
                     # 基础投掷结果
                     result = []
