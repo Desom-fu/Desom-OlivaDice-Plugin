@@ -23,6 +23,7 @@
                 "HPMAX",
                 "MP",
                 "MPMAX",
+				"MPMAXSUB",
                 "暗伤",
                 "损伤",
                 "心魔",
@@ -86,18 +87,22 @@
                 "混元阳符",
                 "龙越天门"
             ],
-            "吉点": [
+            "点数": [
                 "个人吉点",
-                "团队吉点"
+                "团队吉点",
+				"凶点"
             ]
         },
         "skillConfig": {
             "skipEnhance": [],
-            "forceMapping": []
+            "forceMapping": [
+				"HPMAX",
+				"MPMAX"
+			]
         },
         "mapping": {
             "HPMAX": "{HP}",
-            "MPMAX": "{MP}"
+            "MPMAX": "({MP})-({MPMAXSUB})"
         },
         "init": {},
         "synonyms":{
@@ -105,6 +110,7 @@
             "HPMAX": ["寿数上限","生命上限","HPMAX","生命值上限","HITPOINTSMAX","血量上限","体力上限"],
             "MP": ["灵气","魔法值","MP","魔法","MAGICPOINTS"],
             "MPMAX": ["灵气上限","魔法值上限","MPMAX","魔法上限","MAGICPOINTSMAX"],
+			"MPMAXSUB": ["灵气上限减值","魔法值上限减值","MPMAXSUB","魔法上限减值","MAGICPOINTSMAXSUB"],
             "金行": ["金行","金"],
             "木行": ["木行","木"],
             "水行": ["水行","水"],
@@ -129,15 +135,18 @@
             "HP": "寿数",
             "HPMAX": "寿数上限",
             "MP": "灵气",
-            "MPMAX": "灵气上限"
+            "MPMAX": "灵气上限",
+			"MPMAXSUB": "灵气上限减值"
         },
         "redirect": {
             "寿数": "HP",
             "寿数上限": "HPMAX",
             "灵气": "MP",
-            "灵气上限": "MPMAX"
+            "灵气上限": "MPMAX",
+			"灵气上限减值": "MPMAXSUB"
         },
         "defaultSkillValue": {
+			"MPMAXSUB": 0,
             "金行": 0,
             "木行": 0,
             "水行": 0,

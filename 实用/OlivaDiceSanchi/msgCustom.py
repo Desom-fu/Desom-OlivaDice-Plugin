@@ -54,11 +54,12 @@ dictStrCustom = {
     
     # .摇卦 命数卦象相关消息
     'strHexagramResult': '''[{tUserName}] 摇卦占卜完成：
-{tHexagramNum} {tHexagramName}
-{tHexagramDesc}
 ━━━ 卦 象 结 果 ━━━
 上卦：{tUpperBagua}
 下卦：{tLowerBagua}
+
+{tHexagramNum} {tHexagramName}
+{tHexagramDesc}
 ━━━ 五 行 属 性 ━━━
 {tAttributes}
 ━━━ 波 动 检 定 ━━━
