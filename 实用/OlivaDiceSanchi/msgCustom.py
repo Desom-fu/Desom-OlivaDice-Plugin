@@ -22,8 +22,8 @@ dictStrCustomDict = {}
 
 dictStrCustom = {
     # .tq 铜钱卦占卜相关消息
-    'strTQResult': '[{tName}]进行占卜{tExprShow}，掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
-    'strTQResultMore': '[{tName}]进行占卜{tExprShow}，掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
+    'strTQResult': '[{tName}]进行占卜[{tExprShow}]，掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
+    'strTQResultMore': '[{tName}]进行占卜[{tExprShow}]，掷了{tTime}次，每次掷出{tOriginalNumber}枚铜钱{tAllExtraCoinsText}，结果为: \n{tResult}\n总和次数：阴: {tYinNumber}次；阳: {tYangNumber}次{tBPText}',
     'strTQError': '三尺之下占卜错误: {tResult}\n请使用[.help r]查看掷骰帮助，或使用[.help onedice]查看先进的OneDice标准。\n请通过.help sanchi查看正确占卜格式',
     'strTQHide': '[{tName}]在群({tGroupId})中进行暗中占卜{tExprShow}：\n掷出{tOriginalNumber}枚铜钱{tExtraCoinsText}，结果为: {tResult}\n阴: {tYinNumber}次；阳: {tYangNumber}次{tTransformText}',
     'strTQHideShow': '[{tName}]进行暗中占卜',

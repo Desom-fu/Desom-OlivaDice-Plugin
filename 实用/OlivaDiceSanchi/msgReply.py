@@ -1199,9 +1199,9 @@ def unity_reply(plugin_event, Proc):
                 
                 # 设置表达式显示
                 if expr_show:
-                    dictTValue['tExprShow'] = f'（{expr_show}）'
+                    dictTValue['tExprShow'] = f'{expr_show}+{extra_coins}={str(tq_number + extra_coins)}' if extra_coins > 0 else expr_show
                 else:
-                    dictTValue['tExprShow'] = ''
+                    dictTValue['tExprShow'] = f'{tq_number}+{extra_coins}={str(tq_number + extra_coins)}' if extra_coins > 0 else str(tq_number)
                 
                 # 设置额外铜钱显示
                 if extra_coins > 0:
@@ -1311,9 +1311,9 @@ def unity_reply(plugin_event, Proc):
                 
                 # 设置表达式显示
                 if expr_show:
-                    dictTValue['tExprShow'] = f'（{expr_show}）'
+                    dictTValue['tExprShow'] = f'{expr_show}+{extra_coins}={str(tq_number + extra_coins)}' if extra_coins > 0 else expr_show
                 else:
-                    dictTValue['tExprShow'] = ''
+                    dictTValue['tExprShow'] = f'{tq_number}+{extra_coins}={str(tq_number + extra_coins)}' if extra_coins > 0 else str(tq_number)
                 
                 # 设置所有额外铜钱显示
                 if all_extra_coins > 0:
