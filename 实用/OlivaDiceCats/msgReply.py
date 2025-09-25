@@ -554,8 +554,391 @@ def unity_reply(plugin_event, Proc):
         #此群关闭时中断处理
         if not flag_groupEnable and not flag_force_reply:
             return
+        if isMatchWordStart(tmp_reast_str, ['catsa'], isCommand = True):
+            # 解析@用户
+            is_at, at_user_id, tmp_reast_str = parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            if is_at and not at_user_id:
+                return
+                
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'catsa')
+            tmp_reast_str = skipSpaceStart(tmp_reast_str)
+            tmp_reast_str = tmp_reast_str.rstrip(' ')
             
-        if isMatchWordStart(tmp_reast_str, ['cats'], isCommand = True):
+            try:
+                # 分离前式和后式，如果没有#则默认挑战难度为9
+                if '#' in tmp_reast_str:
+                    parts = tmp_reast_str.split('#', 1)
+                    front_expr = parts[0].strip()
+                    back_expr = parts[1].strip()
+                else:
+                    front_expr = tmp_reast_str.strip()
+                    back_expr = '9'
+                
+                # 解析前式参数
+                front_cleaned, front_bonus, front_luck_mod, front_luck_fixed = parse_expression_and_params(front_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
+                # 解析后式参数（后式中的参数效果相反）
+                back_cleaned, back_bonus, back_luck_mod, back_luck_fixed = parse_expression_and_params(back_expr, isMatchWordStart, getMatchWordStartRight, skipSpaceStart)
+                
+                # 确定检定用户
+                target_user_id = plugin_event.data.user_id
+                
+                # 获取人物卡信息
+                tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(target_user_id, plugin_event.platform['platform'])
+                tmp_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
+                
+                if tmp_pc_name:
+                    dictTValue['tName'] = tmp_pc_name
+                else:
+                    res = plugin_event.get_stranger_info(user_id = target_user_id)
+                    if res != None and res['active']:
+                        dictTValue['tName'] = res['data']['name']
+                    else:
+                        dictTValue['tName'] = f'用户{target_user_id}'
+                
+                # 设置挑战目标信息
+                if is_at:
+                    # 获取被@用户的人物卡名称，优先使用人物卡名称
+                    challenge_target_name = None
+                    at_pcHash = OlivaDiceCore.pcCard.getPcHash(at_user_id, plugin_event.platform['platform'])
+                    at_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(at_pcHash, tmp_hagID)
+                    
+                    if at_pc_name:
+                        challenge_target_name = at_pc_name
+                    elif 'tUserName01' in dictTValue and dictTValue['tUserName01']:
+                        challenge_target_name = dictTValue['tUserName01']
+                    else:
+                        challenge_target_name = f'用户{at_user_id}'
+                    
+                    dictTValue['tChallengeTarget'] = f'挑战[{challenge_target_name}]'
+                else:
+                    dictTValue['tChallengeTarget'] = ''
+                
+                # 获取人物卡技能数据和规则
+                # 前式技能表（自己的技能）
+                front_pcHash = OlivaDiceCore.pcCard.getPcHash(plugin_event.data.user_id, plugin_event.platform['platform'])
+                front_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(front_pcHash, tmp_hagID)
+                front_pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(front_pcHash, hagId=tmp_hagID) if front_pc_name else {}
+                front_skill_valueTable = front_pc_skills.copy()
+                
+                # 后式技能表（@对方时用对方的技能，否则用自己的技能）
+                if is_at:
+                    back_pcHash = OlivaDiceCore.pcCard.getPcHash(at_user_id, plugin_event.platform['platform'])
+                    back_pc_name = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(back_pcHash, tmp_hagID)
+                else:
+                    back_pcHash = front_pcHash
+                    back_pc_name = front_pc_name
+                back_pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(back_pcHash, hagId=tmp_hagID) if back_pc_name else {}
+                back_skill_valueTable = back_pc_skills.copy()
+                
+                # 通用技能表（用于显示和一般用途）
+                pc_skills = OlivaDiceCore.pcCard.pcCardDataGetByPcName(tmp_pcHash, hagId=tmp_hagID) if tmp_pc_name else {}
+                skill_valueTable = pc_skills.copy()
+                
+                tmp_pcCardRule = 'default'
+                tmp_pcCardRule_new = OlivaDiceCore.pcCard.pcCardDataGetTemplateKey(tmp_pcHash, tmp_pc_name)
+                if tmp_pcCardRule_new != None:
+                    tmp_pcCardRule = tmp_pcCardRule_new
+                
+                # 添加映射记录
+                if tmp_pc_name != None:
+                    skill_valueTable.update(
+                        OlivaDiceCore.pcCard.pcCardDataGetTemplateDataByKey(
+                            pcHash = tmp_pcHash,
+                            pcCardName = tmp_pc_name,
+                            dataKey = 'mappingRecord',
+                            resDefault = {}
+                        )
+                    )
+                if front_pc_name != None:
+                    front_skill_valueTable.update(
+                        OlivaDiceCore.pcCard.pcCardDataGetTemplateDataByKey(
+                            pcHash = front_pcHash,
+                            pcCardName = front_pc_name,
+                            dataKey = 'mappingRecord',
+                            resDefault = {}
+                        )
+                    )
+                if back_pc_name != None:
+                    back_skill_valueTable.update(
+                        OlivaDiceCore.pcCard.pcCardDataGetTemplateDataByKey(
+                            pcHash = back_pcHash,
+                            pcCardName = back_pc_name,
+                            dataKey = 'mappingRecord',
+                            resDefault = {}
+                        )
+                    )
+                
+                # 获取模板配置
+                tmp_template_name = 'default'
+                tmp_template_customDefault = None
+                if flag_is_from_group:
+                    tmp_groupTemplate = OlivaDiceCore.userConfig.getUserConfigByKey(
+                        userId = tmp_hagID,
+                        userType = 'group',
+                        platform = plugin_event.platform['platform'],
+                        userConfigKey = 'groupTemplate',
+                        botHash = plugin_event.bot_info.hash
+                    )
+                    if tmp_groupTemplate != None:
+                        tmp_template_name = tmp_groupTemplate
+                tmp_template = OlivaDiceCore.pcCard.pcCardDataGetTemplateByKey(tmp_template_name)
+                if tmp_template != None and 'customDefault' in tmp_template:
+                    tmp_template_customDefault = tmp_template['customDefault']
+                
+                # 保存原始技能名（用于后续的技能更新）
+                original_back_skill = None
+                if back_cleaned and back_cleaned in back_skill_valueTable:
+                    original_back_skill = back_cleaned
+                
+                # 计算前式结果（使用自己的技能）
+                front_value = 0
+                front_detail = "0"
+                if front_cleaned:
+                    # 使用replace_skills处理技能替换（前式用自己的技能）
+                    front_expr, front_detail = replace_skills(front_cleaned.replace('=', '').replace(' ', ''), front_skill_valueTable, tmp_pcCardRule)
+                    
+                    # 使用RD处理前式表达式
+                    rd_front = OlivaDiceCore.onedice.RD(front_expr, tmp_template_customDefault)
+                    rd_front.roll()
+                    if rd_front.resError is not None:
+                        dictTValue['tRollPara'] = front_cleaned
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_front.resError, dictStrCustom, dictTValue)
+                        dictTValue['tResult'] = f"错误的出值：{error_msg}"
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsaError'], dictTValue)
+                        replyMsg(plugin_event, tmp_reply_str)
+                        return
+                    front_value = rd_front.resInt
+                    
+                    # 显示处理
+                    if rd_front.resDetail and rd_front.resDetail != str(rd_front.resInt):
+                        if front_detail == rd_front.resDetail:
+                            front_detail = f"{front_detail}={front_value}"
+                        else:
+                            front_detail = f"{front_detail}={rd_front.resDetail}={front_value}"
+                    else:
+                        if front_detail != str(front_value):
+                            front_detail = f"{front_detail}={front_value}"
+                        else:
+                            front_detail = str(front_value)
+                
+                # 计算后式结果（@对方时用对方的技能，否则用自己的技能）
+                back_value = 9  # 默认挑战难度为9
+                back_detail = "9"
+                if back_cleaned:
+                    # 使用replace_skills处理技能替换（后式根据是否@对方选择技能表）
+                    back_expr, back_detail = replace_skills(back_cleaned.replace('=', '').replace(' ', ''), back_skill_valueTable, tmp_pcCardRule)
+                    
+                    # 使用RD处理后式表达式
+                    rd_back = OlivaDiceCore.onedice.RD(back_expr, tmp_template_customDefault)
+                    rd_back.roll()
+                    if rd_back.resError is not None:
+                        dictTValue['tRollPara'] = back_cleaned
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_back.resError, dictStrCustom, dictTValue)
+                        dictTValue['tResult'] = f"错误的挑战难度：{error_msg}"
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsaError'], dictTValue)
+                        replyMsg(plugin_event, tmp_reply_str)
+                        return
+                    back_value = rd_back.resInt
+                    
+                    # 显示处理
+                    if rd_back.resDetail and rd_back.resDetail != str(rd_back.resInt):
+                        if back_detail == rd_back.resDetail:
+                            back_detail = f"{back_detail}={back_value}"
+                        else:
+                            back_detail = f"{back_detail}={rd_back.resDetail}={back_value}"
+                    else:
+                        if back_detail != str(back_value):
+                            back_detail = f"{back_detail}={back_value}"
+                        else:
+                            back_detail = str(back_value)
+                
+                # 处理偶数挑战难度：偶数减1变奇数
+                original_back_value = back_value
+                if back_value % 2 == 0:  # 如果是偶数
+                    back_value -= 1
+                    if original_back_value != back_value:
+                        back_detail = f"{back_detail}→{back_value}(偶数转奇数)"
+                
+                # 获取幸运值并计算幸运骰数量
+                luck_value = get_pc_luck_value(plugin_event, target_user_id, tmp_hagID)
+                
+                # 确定最终幸运骰数量，l参数优先级最高
+                final_luck_fixed = back_luck_fixed if back_luck_fixed is not None else front_luck_fixed
+                if final_luck_fixed is not None:
+                    final_luck_count = final_luck_fixed
+                else:
+                    total_luck_modifier = front_luck_mod - back_luck_mod  # 后式中的u/d效果相反
+                    final_luck_count = max(1, min(5, luck_value + total_luck_modifier))
+                
+                # 投掷幸运骰
+                luck_dice_results, luck_dice_display_details, critical_success_count, critical_failure_count, need_manual_selection, confirmed_result, all_details, all_details_with_index = roll_luck_dice(final_luck_count, tmp_template_customDefault)
+                
+                # .catsa指令的核心逻辑：自动选择最高值
+                selected_dice = None
+                selected_detail = None
+                selected_index = 0
+                critical_type = None
+                luck_change = 0
+                upgrade_points_change = 0
+                
+                # 处理大成功/大失败的逻辑
+                if critical_success_count > critical_failure_count:
+                    # 大成功数量多，直接确定为大成功
+                    critical_type = 'critical_success'
+                    luck_change = 1
+                    upgrade_points_change = 1
+                    selected_dice = confirmed_result if confirmed_result is not None else 10
+                    selected_detail = f"幸运骰({selected_dice})"
+                elif critical_failure_count > critical_success_count:
+                    # 大失败数量多，直接确定为大失败
+                    critical_type = 'critical_failure'
+                    luck_change = -1
+                    upgrade_points_change = 1
+                    selected_dice = confirmed_result if confirmed_result is not None else 1
+                    selected_detail = f"幸运骰({selected_dice})"
+                elif critical_success_count == critical_failure_count and critical_success_count > 0:
+                    # 大成功和大失败数量相等且都大于0，自动选择最高值（选择大成功）
+                    critical_type = 'critical_success'
+                    luck_change = 1
+                    upgrade_points_change = 1
+                    selected_dice = 10  # 大成功默认为10
+                    selected_detail = f"幸运骰({selected_dice})"
+                else:
+                    # 没有大成功/大失败，自动选择最高值的普通骰子
+                    if len(luck_dice_results) > 0:
+                        # 找到最高值的索引
+                        max_value = max(luck_dice_results)
+                        max_index = luck_dice_results.index(max_value)
+                        selected_dice = luck_dice_results[max_index]
+                        selected_detail = f"幸运骰({luck_dice_display_details[max_index]})"
+                        selected_index = max_index
+                    else:
+                        # 兜底情况（理论上不应该发生）
+                        selected_dice = 5
+                        selected_detail = "幸运骰(5)"
+                
+                # 格式化幸运骰显示（显示所有骰子详情，标注选择的是哪个）
+                if len(all_details_with_index) > 0:
+                    # 显示所有骰子详情（带序号），并标注选择的骰子
+                    dice_display = []
+                    first_critical_marked = False  # 标记是否已经标注过第一个大成功/大失败
+                    
+                    for i, display_detail in enumerate(all_details_with_index):
+                        if critical_type and not first_critical_marked:
+                            # 如果有大成功/大失败，标注第一个符合条件的
+                            if critical_type == 'critical_success' and '大成功' in display_detail:
+                                dice_display.append(f"{display_detail} ★自动选择★")
+                                first_critical_marked = True
+                            elif critical_type == 'critical_failure' and '大失败' in display_detail:
+                                dice_display.append(f"{display_detail} ★自动选择★")
+                                first_critical_marked = True
+                            else:
+                                dice_display.append(display_detail)
+                        elif not critical_type and i < len(luck_dice_results) and i == selected_index:
+                            # 普通情况，标注最高值
+                            dice_display.append(f"{display_detail} ★自动选择★")
+                        else:
+                            dice_display.append(display_detail)
+                    
+                    dictTValue['tLuckDiceList'] = ' '.join(dice_display)
+                    dictTValue['tLuckValue'] = str(final_luck_count)
+                else:
+                    # 没有可用的骰子结果（兜底情况）
+                    dictTValue['tLuckDiceList'] = selected_detail
+                    dictTValue['tLuckValue'] = str(final_luck_count)
+                
+                # 计算最终结果
+                total_result = front_value + selected_dice
+                success_level = total_result - back_value
+                
+                # 应用b/p参数
+                final_bonus = front_bonus - back_bonus  # 后式中的b/p效果相反
+                adjusted_success_level = success_level + final_bonus
+                
+                # 成功等级除以2并向下取整
+                final_success_level = adjusted_success_level // 2
+                
+                # 构建成功等级计算过程显示
+                success_level_process = f"{total_result}-{back_value}={success_level}"
+                if final_bonus != 0:
+                    bonus_sign = "+" if final_bonus >= 0 else ""
+                    success_level_process += f"{bonus_sign}{final_bonus}={adjusted_success_level}"
+                if adjusted_success_level != final_success_level:
+                    success_level_process += f"÷2={final_success_level}"
+                
+                # 构建显示过程
+                # 前式过程显示
+                front_process = front_detail
+                
+                # 后式过程显示
+                back_process = back_detail
+                
+                # 幸运骰显示（只显示结果，不显示投掷过程）
+                luck_display = selected_detail
+                
+                # 重投信息处理（从幸运骰详情中提取）
+                reroll_info = ""
+                if critical_success_count > 0 or critical_failure_count > 0:
+                    reroll_parts = []
+                    if critical_success_count > 0:
+                        reroll_parts.append(f"大成功×{critical_success_count}")
+                    if critical_failure_count > 0:
+                        reroll_parts.append(f"大失败×{critical_failure_count}")
+                    reroll_info = f"重投结果: {', '.join(reroll_parts)}\n"
+
+                # 获取难度等级文本
+                total_difficulty_level = get_difficulty_level(total_result)
+                back_difficulty_level = get_difficulty_level(back_value)
+                
+                # 设置显示值
+                dictTValue['tFrontResult'] = front_process
+                dictTValue['tLuckDiceResult'] = luck_display
+                dictTValue['tTotalResult'] = f"{total_result}[{total_difficulty_level}]"
+                dictTValue['tBackResult'] = f"{back_process}[{back_difficulty_level}]"
+                dictTValue['tSuccessLevelInt'] = str(final_success_level)
+                dictTValue['tSuccessLevelProcess'] = success_level_process
+                dictTValue['tRerollInfo'] = reroll_info
+                
+                # 判断技能检定类型
+                tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
+                
+                # 处理大成功/大失败
+                if critical_type == 'critical_success':
+                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_SUCCESS
+                elif critical_type == 'critical_failure':
+                    tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_FAIL
+                else:
+                    # 正常检定结果
+                    if final_success_level >= 0:
+                        tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_SUCCESS
+                    else:
+                        tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_FAIL
+                
+                # 获取技能检定结果文案
+                dictTValue['tSkillCheckReasult'] = OlivaDiceCore.msgReplyModel.get_SkillCheckResult(tmpSkillCheckType, dictStrCustom, dictTValue, tmp_pcHash, tmp_pc_name)
+                
+                # 更新人物卡的幸运值和升级点（只有在有变化时才更新）
+                if luck_change != 0 or upgrade_points_change != 0:
+                    update_pc_luck_and_skill(plugin_event, tmp_userID, tmp_hagID, luck_change, upgrade_points_change)
+                
+                # 根据是否为大成功/大失败选择不同的回复模板
+                if critical_type == 'critical_success' or critical_type == 'critical_failure':
+                    # 直接大成功/大失败，使用简化模板，显示所有骰子详情
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsaCriticalResult'], dictTValue)
+                else:
+                    # 正常检定或手动选择后的结果，使用完整模板
+                    dictTValue['tSuccessLevel'] = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsSuccessLevel'], dictTValue)
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsaResult'], dictTValue)
+                
+                replyMsg(plugin_event, tmp_reply_str)
+                
+            except Exception as e:
+                dictTValue['tResult'] = str(e)
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strCatsaError'], dictTValue)
+                replyMsg(plugin_event, tmp_reply_str)
+            
+            return
+        elif isMatchWordStart(tmp_reast_str, ['cats'], isCommand = True):
             # 检查是否有等待中的cats选择 - 如果有，阻止新的cats命令执行
             tmp_bothash = plugin_event.bot_info.hash
             tmp_hash = OlivaDiceCore.msgReplyModel.contextRegHash([None, plugin_event.data.user_id])

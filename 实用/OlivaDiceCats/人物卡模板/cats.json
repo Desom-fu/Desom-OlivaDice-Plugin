@@ -99,7 +99,9 @@
         },
         "skillConfig": {
             "skipEnhance": [],
-            "forceMapping": []
+            "forceMapping": [
+                "HPMAX"
+            ]
         },
         "mapping": {
             "HPMAX": "{HP}",
