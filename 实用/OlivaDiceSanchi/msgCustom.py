@@ -55,11 +55,11 @@ dictStrCustom = {
     # .摇卦 命数卦象相关消息
     'strHexagramResult': '''[{tUserName}] 摇卦占卜完成：
 ━━━ 卦 象 结 果 ━━━
-上卦：{tUpperBagua}
-下卦：{tLowerBagua}
-
 {tHexagramNum} {tHexagramName}
 {tHexagramDesc}
+━━━ 卦 象 属 性 ━━━
+上卦：{tUpperBagua}
+下卦：{tLowerBagua}
 ━━━ 五 行 属 性 ━━━
 {tAttributes}
 ━━━ 波 动 检 定 ━━━
@@ -77,7 +77,30 @@ dictStrCustom = {
     'strMyExprError': '自己的表达式解析错误: {tResult}',
     'strOtherExprError': '对方的表达式解析错误: {tResult}',
     'strAttrExprError': '属性表达式解析错误: {tResult}',
-    'strDifficultyExprError': '难度表达式解析错误: {tResult}'
+    'strDifficultyExprError': '难度表达式解析错误: {tResult}',
+    
+    # .投签 因果执念相关消息
+    'strDivinationResult': '''[{tUserName}] 投签完成：
+━━━ 因 果 执 念 ━━━
+【凡尘记忆】- 曾经的身份
+{tPastIdentity}
+【横遭祸事】- 发生的变故  
+{tPastTragedy}
+【执念生根】- 如今的目标
+{tCurrentGoal}
+━━━ 三 官 官 职 ━━━
+{tOfficialPosition}
+━━━ 吉 点 数 量 ━━━
+{tLuckyPoints}''',
+
+    'strDivinationError': '投签失败：{tError}\n请重新尝试投签命令',
+
+    # 投签各部分详细描述
+    'strPastIdentity': '投钱：{tCoinsPastIdentity}\n{tPastIdentityDesc}',
+    'strPastTragedy': '投钱：{tCoinsPastTragedy}\n{tPastTragedyDesc}',
+    'strCurrentGoal': '投钱：{tCoinsCurrentGoal}\n{tCurrentGoalDesc}',
+    'strOfficialPosition': '官职：{tOfficialPositionDesc}',
+    'strLuckyPoints': '投钱：{tCoinsLuckyPoints}\n吉点：{tLuckyPointsCount}个'
 }
 
 dictStrConst = {
@@ -141,7 +164,23 @@ dictTValue = {
     
     # 错误处理
     'tRollPara': '',
-    'tResult': ''
+    'tResult': '',
+    
+    # .投签 因果执念相关
+    'tPastIdentity': '',
+    'tPastIdentityDesc': '',
+    'tCoinsPastIdentity': '',
+    'tPastTragedy': '',
+    'tPastTragedyDesc': '',
+    'tCoinsPastTragedy': '',
+    'tCurrentGoal': '',
+    'tCurrentGoalDesc': '',
+    'tCoinsCurrentGoal': '',
+    'tOfficialPosition': '',
+    'tOfficialPositionDesc': '',
+    'tLuckyPoints': '',
+    'tCoinsLuckyPoints': '',
+    'tLuckyPointsCount': '',
 }
 
 dictStrCustomNote = {
@@ -179,6 +218,15 @@ dictStrCustomNote = {
     # .摇卦 命数卦象相关
     'strHexagramResult': '【.摇卦】指令\n摇卦占卜结果显示',
     'strHexagramError': '【.摇卦】指令\n摇卦失败错误',
+
+    # .投签 因果执念相关
+    'strDivinationResult': '【.投签】指令\n投签结果显示',
+    'strDivinationError': '【.投签】指令\n投签失败错误',
+    'strPastIdentity': '【.投签】\n凡尘记忆部分',
+    'strPastTragedy': '【.投签】\n横遭祸事部分',
+    'strCurrentGoal': '【.投签】\n执念生根部分',
+    'strOfficialPosition': '【.投签】\n三官官职部分',
+    'strLuckyPoints': '【.投签】\n吉点数量部分',
     
     # 通用错误
     'strCoinRollError': '【三尺通用】\n铜钱投掷错误',
@@ -196,12 +244,14 @@ dictHelpDocTemp = {
 • .tqa - 三尺之下检定  
 • .tqav - 三尺之下对抗
 • .摇卦 - 命数摇卦
+• .投签 - 因果执念投签
 
 详细使用方法请输入：
 .help tq    - 查看铜钱占卜详情
 .help tqa   - 查看检定系统详情
 .help tqav  - 查看对抗系统详情
 .help 摇卦  - 查看命数摇卦详情
+.help 投签  - 查看因果执念投签详情
 .help sanchist - 查看三尺之下跑团数据录入帮助''',
 
     'tq': '''【三尺之下铜钱占卜】
@@ -288,10 +338,44 @@ dictHelpDocTemp = {
 
 波动检定：
 - 阴爻：取低值（如"2-3"取2）
-- 阳爻：取高值（如"2-3"取3）
+- 阳爻：取高值（如"2-3"取3）''',
 
-例子：
-.摇卦    # 投掷六枚铜钱，生成卦象''',
+    '投签': '''【因果执念投签】
+.投签
+
+投签功能：
+- 投掷三次三枚铜钱，分别决定：
+  - 【凡尘记忆】-曾经的身份
+  - 【横遭祸事】-发生的变故
+  - 【执念生根】-如今的目标
+- 投掷一次d3决定三官官职
+- 最后投掷一次三枚铜钱决定吉点数量
+
+凡尘记忆：
+- 三阴爻：流离失所 - 居无定所之人
+- 一阳爻：孤守一方 - 老旧建筑的看守人  
+- 二阳爻：市井乡民 - 普通的城镇百姓/打工人
+- 三阳爻：行业翘楚 - 专精某一领域的匠人
+
+横遭祸事：
+- 三阴爻：恶鬼缠身 - 被孤魂野鬼纠缠，危及性命
+- 一阳爻：横遭祸事 - 亲朋好友被异灵迫害
+- 二阳爻：家族蒙尘 - 家族祠堂突然出现异变
+- 三阳爻：见证神迹 - 偶然之间看见了超越认知的存在
+
+执念生根：
+- 三阴爻：血海深仇 - 向异灵复仇，以牙还牙以血还血
+- 一阳爻：明心证道 - 寻觅自身存在的意义
+- 二阳爻：铲奸除恶 - 铲除所有害人的异灵
+- 三阳爻：生死相托 - 完成亡者的遗愿和嘱托
+
+三官官职：
+- 1：天官 - 隶属于天官府
+- 2：地官 - 隶属于地官府
+- 3：水官 - 隶属于水官府
+
+吉点数量：
+- 投掷三枚铜钱，阳爻数量即为吉点数量''',
 
     'sanchist': '''【三尺之下跑团数据录入帮助文档】
 1、将骰子拉入群聊后，请先使用[.set temp sanchi]，让本群套用三尺之下模板（只需输入一次，其他人无需再输入）

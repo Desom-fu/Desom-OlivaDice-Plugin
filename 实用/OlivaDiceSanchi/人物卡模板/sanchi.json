@@ -21,6 +21,7 @@
             "身体状况": [
                 "HP",
                 "HPMAX",
+                "HPMAXADD",
                 "MP",
                 "MPMAX",
 				"MPMAXSUB",
@@ -101,7 +102,7 @@
 			]
         },
         "mapping": {
-            "HPMAX": "{HP}",
+            "HPMAX": "({HP})+({HPMAXADD})",
             "MPMAX": "({MP})-({MPMAXSUB})"
         },
         "init": {},
@@ -141,6 +142,7 @@
         "redirect": {
             "寿数": "HP",
             "寿数上限": "HPMAX",
+            "寿数上限加值": "HPMAXADD",
             "灵气": "MP",
             "灵气上限": "MPMAX",
 			"灵气上限减值": "MPMAXSUB"

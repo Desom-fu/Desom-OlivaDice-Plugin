@@ -990,6 +990,146 @@ def unity_reply(plugin_event, Proc):
             replyMsg(plugin_event, tmp_reply_str)
             return
             
+        elif isMatchWordStart(tmp_reast_str, '投签', isCommand = True):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, '投签')
+
+            # 投签功能实现
+            try:
+                # 1. 凡尘记忆 - 曾经的身份
+                past_identity_coins = []
+                past_identity_yang = 0
+                for i in range(3):
+                    rd = OlivaDiceCore.onedice.RD('1D2')
+                    rd.roll()
+                    if rd.resError is not None:
+                        raise Exception("投掷铜钱失败")
+                    coin_result = rd.resMetaTuple[0]
+                    if coin_result == 1:
+                        past_identity_coins.append("阴")
+                    else:
+                        past_identity_coins.append("阳")
+                        past_identity_yang += 1
+
+                past_identity_desc = hexagramData.past_identity_dict.get(past_identity_yang)
+                
+                # 2. 横遭祸事 - 发生的变故
+                past_tragedy_coins = []
+                past_tragedy_yang = 0
+                for i in range(3):
+                    rd = OlivaDiceCore.onedice.RD('1D2')
+                    rd.roll()
+                    if rd.resError is not None:
+                        raise Exception("投掷铜钱失败")
+                    coin_result = rd.resMetaTuple[0]
+                    if coin_result == 1:
+                        past_tragedy_coins.append("阴")
+                    else:
+                        past_tragedy_coins.append("阳")
+                        past_tragedy_yang += 1
+
+                past_tragedy_desc = hexagramData.past_tragedy_dict.get(past_tragedy_yang)
+                
+                # 3. 执念生根 - 如今的目标
+                current_goal_coins = []
+                current_goal_yang = 0
+                for i in range(3):
+                    rd = OlivaDiceCore.onedice.RD('1D2')
+                    rd.roll()
+                    if rd.resError is not None:
+                        raise Exception("投掷铜钱失败")
+                    coin_result = rd.resMetaTuple[0]
+                    if coin_result == 1:
+                        current_goal_coins.append("阴")
+                    else:
+                        current_goal_coins.append("阳")
+                        current_goal_yang += 1
+
+                current_goal_desc = hexagramData.current_goal_dict.get(current_goal_yang)
+
+                # 4. 三官官职 - d3决定
+                rd_official = OlivaDiceCore.onedice.RD('1D3')
+                rd_official.roll()
+                if rd_official.resError is not None:
+                    raise Exception("投掷官职失败")
+
+                official_position = rd_official.resInt
+                if official_position == 1:
+                    official_position_desc = "天官 - 隶属于天官府"
+                elif official_position == 2:
+                    official_position_desc = "地官 - 隶属于地官府"
+                else:  # 3
+                    official_position_desc = "水官 - 隶属于水官府"
+
+                # 5. 吉点数量 - 最后投掷三枚铜钱
+                lucky_points_coins = []
+                lucky_points_yang = 0
+                for i in range(3):
+                    rd = OlivaDiceCore.onedice.RD('1d2')
+                    rd.roll()
+                    if rd.resError is not None:
+                        raise Exception("投掷铜钱失败")
+                    coin_result = rd.resMetaTuple[0]
+                    if coin_result == 1:
+                        lucky_points_coins.append("阴")
+                    else:
+                        lucky_points_coins.append("阳")
+                        lucky_points_yang += 1
+
+                # 设置模板变量
+                dictTValue['tPastIdentity'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strPastIdentity'], 
+                    {
+                        'tCoinsPastIdentity': '、'.join(past_identity_coins),
+                        'tPastIdentityDesc': past_identity_desc
+                    }
+                )
+
+                dictTValue['tPastTragedy'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strPastTragedy'], 
+                    {
+                        'tCoinsPastTragedy': '、'.join(past_tragedy_coins),
+                        'tPastTragedyDesc': past_tragedy_desc
+                    }
+                )
+
+                dictTValue['tCurrentGoal'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strCurrentGoal'], 
+                    {
+                        'tCoinsCurrentGoal': '、'.join(current_goal_coins),
+                        'tCurrentGoalDesc': current_goal_desc
+                    }
+                )
+
+                dictTValue['tOfficialPosition'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strOfficialPosition'], 
+                    {
+                        'tOfficialPositionDesc': official_position_desc
+                    }
+                )
+
+                dictTValue['tLuckyPoints'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strLuckyPoints'], 
+                    {
+                        'tCoinsLuckyPoints': '、'.join(lucky_points_coins),
+                        'tLuckyPointsCount': str(lucky_points_yang)
+                    }
+                )
+
+                # 发送回复
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strDivinationResult'], 
+                    dictTValue
+                )
+                replyMsg(plugin_event, tmp_reply_str)
+
+            except Exception as e:
+                dictTValue['tError'] = str(e)
+                tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strDivinationError'], 
+                    dictTValue
+                )
+                replyMsg(plugin_event, tmp_reply_str)
+            return
         elif isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
             is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
             if is_at and not at_user_id:
