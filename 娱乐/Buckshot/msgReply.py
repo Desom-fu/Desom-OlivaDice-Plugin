@@ -45,7 +45,6 @@ def unity_reply(plugin_event, Proc):
     skipSpaceStart = OlivaDiceCore.msgReply.skipSpaceStart
     skipToRight = OlivaDiceCore.msgReply.skipToRight
     msgIsCommand = OlivaDiceCore.msgReply.msgIsCommand
-    to_half_width = OlivaDiceCore.msgReply.to_half_width
     send_forward_text = Buckshot.function.send_forward_text
 
     tmp_at_str = OlivOS.messageAPI.PARA.at(plugin_event.base_info['self_id']).CQ()
