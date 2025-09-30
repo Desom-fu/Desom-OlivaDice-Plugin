@@ -13,7 +13,7 @@
 👇以下是插件列表👇
 
 ### 🧩娱乐
- * `Buckshot` -- 超级牛逼的26道具3模式恶魔轮盘赌！论坛发布地址：暂未发布
+ * `Buckshot` -- 超级牛逼的26道具3模式恶魔轮盘赌！论坛发布地址：https://forum.olivos.run/d/858-26-3
  * `echo` -- 让你的骰娘echo你的内容！论坛发布地址：不会发布
  * `JrrpChange` -- 可以根据jrrp大小添加对应的文案。论坛发布地址：https://forum.olivos.run/d/837-jrrpchangejrrp
  * `OlivaDicePuke` -- 一个自用的跑团抽扑克插件。论坛发布地址：不会发布
