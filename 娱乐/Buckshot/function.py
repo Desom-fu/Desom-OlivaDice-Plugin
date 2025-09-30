@@ -76,7 +76,7 @@ item_dic2 = {
 item_dic = item_dic1 | item_dic2
 
 # 定义身份模式死斗回合数方便更改
-death_turn = 12
+death_turn = 10
 pangguang_turn = 3
 
 # 定义每回合的时间
@@ -96,8 +96,8 @@ item_effects = {
     "放大镜": "观察下一颗子弹的种类",
     "眼镜": "观察下两颗子弹的种类，但顺序未知",
     "手铐": "跳过对方下一回合（不可重复使用/与禁止卡一同使用）",
-    "禁止卡": "跳过对方下1~2（随机）个回合，对方获得禁止卡（若对方道具已达6个上限，将不会获得禁止卡）",
-    "欲望之盒": "50%抽取一个道具，30%恢复一点血量（若血量达到上限将赠与一个本轮无视道具上限的桃），20%对对方造成一点伤害",
+    "禁止卡": "跳过对方下1~2（随机）个回合，对方获得禁止卡（若对方道具已达上限，将不会获得禁止卡）",
+    "欲望之盒": "50%抽取一个道具，30%恢复一点血量（若血量达到上限将赠与一个本轮实弹耗尽前无视道具上限的桃），20%对对方造成一点伤害",
     "无中生有": "抽取两个道具，然后跳过回合，对方若有束缚，束缚的回合-1！并且无中生有生成的道具直到本轮实弹耗尽前可以超出上限（本轮实弹耗尽后超出上限的道具会消失）！",
     "小刀": "伤害变为2（注：同时使用多个小刀或酒会导致浪费！）",
     "酒": "伤害变为2，同时若hp等于1时，回复1hp（注：同时使用多个小刀或酒会导致浪费！）",
@@ -106,25 +106,18 @@ item_effects = {
     "手套": "重新换弹，不进行道具刷新",
     "骰子": "你的hp变为1到4的随机值",
     "墨镜": "观察第一颗和最后一颗子弹的种类，但顺序未知",
-    "双转团": "（该道具为“身份”模式专属道具）把这个道具转移到对方道具栏里，若对方道具已达上限则丢弃本道具；另外还有概率触发特殊效果？可能会掉血，可能会回血，可能会送给对方道具……但由于其富含identity，可能有其他的非bet2游戏内的效果？",
+    "双转团": "（该道具为“身份”模式专属道具）把这个道具转移到对方道具栏里，若对方道具已达上限则丢弃本道具；另外还有概率触发特殊效果？可能会掉血，可能会回血，可能会送给对方道具……",
     "天秤": "（该道具为“身份”模式专属道具）如果你的道具数量≥对方道具数量，你对对方造成一点伤害；你的道具数量<对方道具数量，你回一点血",
     "休养生息": "（该道具为“身份”模式专属道具）自己的hp恢复2，对方的hp恢复1，不跳回合；若对面为满血，则只回一点体力。",
     "玩具枪": "（该道具为“身份”模式专属道具）1/2的概率无事发生，1/2的概率对对面造成1点伤害",
     "烈弓": "（该道具为“身份”模式专属道具）使用烈弓后，下一发子弹伤害+1，且伤害类道具（小刀、酒、烈弓）的加伤效果可以无限叠加！",
     "血刃": "（该道具为“身份”模式专属道具）可以扣除自己1点hp，获得两个道具！并且获得的道具直到本轮实弹耗尽前可以超出上限（本轮实弹耗尽后超出上限的道具会消失）",
-    "黑洞": "（该道具为“身份”模式专属道具）召唤出黑洞，随机夺取对方的任意一个道具！\n如果对方没有道具，黑洞将在沉寂中回到你的身边。",
+    "黑洞": "（该道具为“身份”模式专属道具）召唤出黑洞，随机夺取对方的任意一个道具！如果对方没有道具，黑洞将在沉寂中回到你的身边。",
     "金苹果": "（该道具为“身份”模式专属道具）金苹果可以让你回复3点hp！但是作为代价你会跳过接下来的两个回合！不过对面的手铐和禁止卡也似乎不能使用了……",
     "铂金草莓": "（该道具为“身份”模式专属道具）因为是铂金草莓，所以能做到！自己回复1点hp，并且双方各加1点hp上限！",
     "肾上腺素": "（该道具为“身份”模式专属道具）双方的hp上限-1，道具上限+1，并且使用者获得一个新道具！如果你们的hp上限为1，无法使用该道具！",
     "烈性TNT": "（该道具为“身份”模式专属道具）双方的hp上限-1，hp各-1！注意，是先扣hp上限，然后再扣hp！另外，如果使用后会自杀，则无法使用该道具！",
 }
-
-help_msg = f"""
-输入 .开枪 自己/对方 -|- 向自己/对方开枪
-输入 .查看局势 -|- 查看当前局势
-输入 .恶魔道具 道具名/all -|- 查看道具的使用说明
-输入 .恶魔投降 -|- 进行投降
-输入 .使用道具 道具名 -|- 使用道具"""
 
 # 定义权重表
 def get_random_item(identity_found, normal_mode_limit, user_id):
@@ -373,20 +366,22 @@ def save_user_data(bot_hash, user_hash, data):
 def get_nickname(plugin_event, user_id):
     """获取用户昵称"""
     try:
-        plres = plugin_event.get_stranger_info(user_id)
         pid_nickname = OlivaDiceCore.userConfig.getUserConfigByKey(
             userId=user_id,
             userType='user',
             platform=plugin_event.platform['platform'],
             userConfigKey='userName',
             botHash=plugin_event.bot_info.hash,
-            default=plres['data']['name'] if plres['active'] else f"用户{user_id}"
+            default=f"用户{user_id}"
         )
-        if plres['active'] and pid_nickname == f'用户{user_id}':
+        if pid_nickname != f"用户{user_id}":
+            return pid_nickname
+        plres = plugin_event.get_stranger_info(user_id)
+        if plres['active']:
             pid_nickname = plres['data']['name']
         return pid_nickname
     except:
-        return user_id
+        return f"用户{user_id}"
     
 def handle_game_end(
     plugin_event,
@@ -423,6 +418,9 @@ def handle_game_end(
     player0_data['total_games'] += 1
     player1_data['total_games'] += 1
     
+    # 初始化连胜数据
+    winner_streak = 0
+    
     # 更新连胜数据
     if str(winner) == str(player0):
         player0_data['win_times'] += 1
@@ -431,8 +429,11 @@ def handle_game_end(
             player0_data['longest_win_streak'], 
             player0_data['current_win_streak']
         )
+        # 获取胜利方连胜
+        winner_streak = player0_data['current_win_streak']
         # 重置失败方的连胜
         player1_data['current_win_streak'] = 0
+        
     elif str(winner) == str(player1):
         player1_data['win_times'] += 1
         player1_data['current_win_streak'] += 1
@@ -440,21 +441,21 @@ def handle_game_end(
             player1_data['longest_win_streak'], 
             player1_data['current_win_streak']
         )
+        # 获取胜利方连胜
+        winner_streak = player1_data['current_win_streak']
         # 重置失败方的连胜
         player0_data['current_win_streak'] = 0
-    
-    # 构建基础消息
-    msg = prefix_msg + f"恭喜[{winner_nick_name}]" + (
-        f"胜利！当前连胜局数：{player1_data['current_win_streak']}"
-    )
-    
-    # 重置游戏数据
-    demon_data = demon_default()
-    demon_data['demon_coldtime'] = int(time.time()) + 60
 
     # 统一保存数据
     save_user_data(plugin_event.bot_info.hash, player0_hash, player0_data)
     save_user_data(plugin_event.bot_info.hash, player1_hash, player1_data)
+        
+    # 构建基础消息
+    msg = prefix_msg + f"恭喜[{winner_nick_name}]胜利！当前连胜局数：{winner_streak}"
+    
+    # 重置游戏数据
+    demon_data = demon_default()
+    demon_data['demon_coldtime'] = int(time.time()) + 60
     
     return msg, demon_data
 
@@ -796,7 +797,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
     在玩家触发命令时检查并（若合适）为指定群组创建游戏超时监控线程。
 
     行为：
-    - 如果存档不存在或没有进行中的游戏则返回 False。
+    - 如果存档不存在或没有进行中的游戏则返回 True。
     - 如果游戏已超时，则执行对应的超时结束逻辑并返回 False（不创建线程）。
     - 如果游戏未超时且当前没有监控线程，则创建并启动监控线程，返回 True。
     """
@@ -809,7 +810,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
         # 如果存档为空或没有玩家，直接返回
         players = demon_data.get('pl', [])
         if not players:
-            return False
+            return True
 
         is_started = demon_data.get('start', False)
         is_ready = demon_data.get('ready', False)

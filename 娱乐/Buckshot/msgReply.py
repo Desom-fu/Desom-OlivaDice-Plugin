@@ -233,7 +233,9 @@ def unity_reply(plugin_event, Proc):
         if isMatchWordStart(tmp_reast_str, ['加入赌局','参加赌局'], isCommand = True):
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['加入赌局','参加赌局'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
@@ -288,7 +290,7 @@ def unity_reply(plugin_event, Proc):
     
             elif len(demon_data['pl']) == 1:
                 # 第二位玩家加入前检查是否已经加入
-                if user_id in demon_data['pl']:
+                if str(user_id) in demon_data['pl']:
                     msg = f"[{get_nickname(plugin_event, user_id)}]，你已经是第一位玩家了，无需重复加入！\n请等待第二位玩家加入。"
                     replyMsg(plugin_event, msg, True)
                     return
@@ -379,7 +381,9 @@ def unity_reply(plugin_event, Proc):
         elif isMatchWordStart(tmp_reast_str, ['开枪','射击'], isCommand = True):
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['开枪','射击'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
@@ -426,7 +430,9 @@ def unity_reply(plugin_event, Proc):
         elif isMatchWordStart(tmp_reast_str, ['使用道具'], isCommand = True):
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['使用道具'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
@@ -560,7 +566,7 @@ def unity_reply(plugin_event, Proc):
                     if demon_data['hp'][player_turn] >= hp_max + 1:
                         demon_data['hp'][player_turn] = hp_max
                         player_items.append(1)
-                        msg += f"但是由于你的体力已经到达上限，这点体力将转化为桃送给你。这个桃无视道具上限，但只有这轮有效。\n"
+                        msg += f"但是由于你的体力已经到达上限，这点体力将转化为桃送给你。这个桃可暂时突破道具上限！\n"
                     msg += f"当前hp：{demon_data['hp'][player_turn]}/{hp_max}\n"
                 elif randchoice <= 10:
                     demon_data['hp'][opponent_turn] -= 1
@@ -745,7 +751,7 @@ def unity_reply(plugin_event, Proc):
                     new_items_names = [item_dic[item] for item in new_items]
                     msg += f"你使用了血刃，献祭自己1盎司鲜血，祈祷，获得了道具：{', '.join(new_items_names)}\n你目前剩余hp为：{demon_data['hp'][player_turn]}/{hp_max}\n"    
                     if randchoice == 5:
-                        msg += f"\n“血刃？你怎么会在这里？抓玛德琳的工资不够你用的吗，还跑过来再就业？”"
+                        msg += f"\n“血刃？你怎么会在这里？隔壁Desom-fu开发的抓玛德琳的工资不够你用的吗，还跑过来再就业？”"
                         msg += f"\n“唉，工作困难啊……抓玛德琳我太没存在感了，总是被人遗忘，必须要出来再就业了。”\n"
 
             elif item_name == "烈弓":
@@ -881,11 +887,13 @@ def unity_reply(plugin_event, Proc):
             save_group_data(bot_hash, group_hash, demon_data)
             player_ids = [player0, player1]
             send_forward_text(plugin_event, player_ids, msg, True, f"\n现在轮到[{next_nickname}]行动！")
-        elif isMatchWordStart(tmp_reast_str, ['查看局势'], isCommand = True):
+        elif isMatchWordStart(tmp_reast_str, ['查看局势','查询局势'], isCommand = True):
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
-            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['查看局势'])
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['查看局势','查询局势'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
             demon_data = load_group_data(bot_hash, group_hash)
@@ -952,12 +960,13 @@ def unity_reply(plugin_event, Proc):
             pid = demon_data['pl'][demon_data['turn']]
             pid_nickname = get_nickname(plugin_event, pid)
             turn_msg = f"当前是[{pid_nickname}]的回合"
-            player_ids = [player0, player1]
-            send_forward_text(plugin_event, player_ids, msg, True, f'\n{turn_msg}')
+            send_forward_text(plugin_event, [pid], msg, True, f'\n{turn_msg}')
         elif isMatchWordStart(tmp_reast_str, ['恶魔投降'], isCommand = True):
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['恶魔投降'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
@@ -1086,7 +1095,7 @@ def unity_reply(plugin_event, Proc):
                 f"- 失败局数: {losses}\n"
                 f"- 胜率: {win_rate:.2f}%\n"
                 f"- 最长连胜: {longest_win_streak}\n"
-                f"- 当前连胜: {current_win_streak}\n"
+                f"- 当前连胜: {current_win_streak}"
             )
 
             replyMsg(plugin_event, stats_message, True)
@@ -1095,7 +1104,9 @@ def unity_reply(plugin_event, Proc):
             # 仅允许管理员、群主或骰主使用此命令
             if not flag_is_from_group:
                 return
-            try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            if not isEnd:
+                return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['结束赌局','强制结束赌局','结束本局赌局'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             user_id = str(plugin_event.data.user_id)
