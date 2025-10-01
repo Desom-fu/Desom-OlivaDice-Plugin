@@ -374,7 +374,7 @@ def get_nickname(plugin_event, user_id):
             botHash=plugin_event.bot_info.hash,
             default=f"用户{user_id}"
         )
-        if pid_nickname != f"用户{user_id}":
+        if pid_nickname != f"用户{user_id}" or pid_nickname != "用户":
             return pid_nickname
         plres = plugin_event.get_stranger_info(user_id)
         if plres['active']:
