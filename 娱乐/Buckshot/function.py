@@ -363,7 +363,7 @@ def save_user_data(bot_hash, user_hash, data):
     except:
         pass
 
-def get_nickname(plugin_event, user_id):
+def get_nickname(plugin_event, user_id, tmp_hagID = None):
     """获取用户昵称"""
     try:
         pid_nickname = OlivaDiceCore.userConfig.getUserConfigByKey(
@@ -379,7 +379,12 @@ def get_nickname(plugin_event, user_id):
         plres = plugin_event.get_stranger_info(user_id)
         if plres['active']:
             pid_nickname = plres['data']['name']
-        return pid_nickname
+            return pid_nickname
+        tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, plugin_event.platform['platform'])
+        tmp_pcName = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
+        if tmp_pcName:
+            return tmp_pcName
+        return f"用户{user_id}"
     except:
         return f"用户{user_id}"
     
@@ -410,7 +415,7 @@ def handle_game_end(
                         plugin_event.platform['platform']
                     )
     
-    winner_nick_name = get_nickname(plugin_event, winner)
+    winner_nick_name = get_nickname(plugin_event, winner, group_id)
     
     player0_data = load_user_data(plugin_event.bot_info.hash, player0_hash)
     player1_data = load_user_data(plugin_event.bot_info.hash, player1_hash)
@@ -464,8 +469,8 @@ def death_mode(plugin_event, identity_found, group_id, demon_data):
     '''判断是否开启死斗模式：根据不同的状态和轮数进行血量上限扣减，保存状态后最后返回msg'''
     player0 = str(demon_data['pl'][0])
     player1 = str(demon_data['pl'][1])
-    p0_nick_name = get_nickname(plugin_event, player0)
-    p1_nick_name = get_nickname(plugin_event, player1)
+    p0_nick_name = get_nickname(plugin_event, player0, group_id)
+    p1_nick_name = get_nickname(plugin_event, player1, group_id)
     msg = ''
     
     if identity_found in turn_limit and demon_data['game_turn'] > turn_limit[identity_found]:
@@ -569,8 +574,8 @@ def refersh_item(plugin_event, identity_found, group_id, demon_data):
     lower, upper = calculate_interval(game_turn_add, identity_found)
     player0 = str(demon_data['pl'][0])
     player1 = str(demon_data['pl'][1])
-    p0_nick_name = get_nickname(plugin_event, player0)
-    p1_nick_name = get_nickname(plugin_event, player1)
+    p0_nick_name = get_nickname(plugin_event, player0, group_id)
+    p1_nick_name = get_nickname(plugin_event, player1, group_id)
     hp0 = demon_data["hp"][0]
     hp1 = demon_data["hp"][1]
     # 重新获取hp_max
@@ -662,7 +667,7 @@ def shoot(plugin_event, user_id, stp, group_id, args):
     if demon_data['hcf'] < 0 and stp != 0:
         demon_data['hcf'] = 0
         out_pl = demon_data['pl'][demon_data['turn']-1]
-        out_nickname = get_nickname(plugin_event, out_pl)
+        out_nickname = get_nickname(plugin_event, out_pl, group_id)
         msg += f"- [{out_nickname}]已挣脱束缚！\n"
     if demon_data['hcf'] == 0 or stp == 0:
         pl += stp
@@ -701,7 +706,7 @@ def shoot(plugin_event, user_id, stp, group_id, args):
         msg += end_msg
     else:
         pid = demon_data['pl'][demon_data['turn']]
-        pid_nickname = get_nickname(plugin_event, pid)
+        pid_nickname = get_nickname(plugin_event, pid, group_id)
         msg += '- 本局总弹数为'+str(len(demon_data['clip']))+'，实弹数为'+str(demon_data['clip'].count(1))
         turn_msg = f"当前是[{pid_nickname}]的回合"
     save_group_data(plugin_event.bot_info.hash, group_id, demon_data)
@@ -709,7 +714,7 @@ def shoot(plugin_event, user_id, stp, group_id, args):
     
 # 超时检查
 # 新增：超时监控线程的执行函数
-def game_timeout_monitor(plugin_event, Proc, bot_hash, group_hash, stop_event):
+def game_timeout_monitor(plugin_event, Proc, bot_hash, group_hash, stop_event, hagID):
     """
     游戏超时监控线程，能处理“等待中”和“游戏中”两种状态。
     """
@@ -734,7 +739,7 @@ def game_timeout_monitor(plugin_event, Proc, bot_hash, group_hash, stop_event):
                 
                 if elapsed > turn_time:
                     player_id = players[0]
-                    pl_nickname = get_nickname(plugin_event, player_id)
+                    pl_nickname = get_nickname(plugin_event, player_id, hagID)
                     
                     # 准备超时消息
                     msg = f"等待其他玩家加入超时！玩家[{pl_nickname}]自动退出游戏，游戏已重置。"
@@ -756,7 +761,7 @@ def game_timeout_monitor(plugin_event, Proc, bot_hash, group_hash, stop_event):
                     player_turn = demon_data["turn"]
                     loser_id = players[player_turn]
                     winner_id = players[(player_turn + 1) % len(players)]
-                    loser_nickname = get_nickname(plugin_event, loser_id)
+                    loser_nickname = get_nickname(plugin_event, loser_id, hagID)
                     
                     # 调用游戏结束处理函数，它会处理数据并返回最终消息
                     end_msg, final_demon_data = handle_game_end(
@@ -792,7 +797,7 @@ def game_timeout_monitor(plugin_event, Proc, bot_hash, group_hash, stop_event):
     if group_hash in Buckshot.msgReply.active_game_monitors:
         del Buckshot.msgReply.active_game_monitors[group_hash]
 
-def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
+def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, hagID):
     """
     在玩家触发命令时检查并（若合适）为指定群组创建游戏超时监控线程。
 
@@ -821,7 +826,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
         if not is_started and len(players) == 1:
             if elapsed > turn_time_local:
                 player_id = players[0]
-                pl_nickname = get_nickname(plugin_event, player_id)
+                pl_nickname = get_nickname(plugin_event, player_id, hagID)
                 msg = f"等待其他玩家加入超时！玩家[{pl_nickname}]自动退出游戏，游戏已重置。"
                 save_group_data(bot_hash, group_hash, demon_default())
                 Proc.log(2, f"[{group_hash}] 群组游戏因等待其他玩家加入超时被重置（触发恢复检查）。")
@@ -836,7 +841,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
                 stop_event = threading.Event()
                 monitor_thread = threading.Thread(
                     target=game_timeout_monitor,
-                    args=(plugin_event, Proc, bot_hash, group_hash, stop_event)
+                    args=(plugin_event, Proc, bot_hash, group_hash, stop_event, hagID)
                 )
                 active_game_monitors[group_hash] = {
                     'thread': monitor_thread,
@@ -856,7 +861,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
                     player_turn = player_turn % max(1, len(players))
                 loser_id = players[player_turn]
                 winner_id = players[(player_turn + 1) % len(players)]
-                loser_nickname = get_nickname(plugin_event, loser_id)
+                loser_nickname = get_nickname(plugin_event, loser_id, hagID)
 
                 end_msg, final_demon_data = handle_game_end(
                     plugin_event,
@@ -878,7 +883,7 @@ def try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash):
                 stop_event = threading.Event()
                 monitor_thread = threading.Thread(
                     target=game_timeout_monitor,
-                    args=(plugin_event, Proc, bot_hash, group_hash, stop_event)
+                    args=(plugin_event, Proc, bot_hash, group_hash, stop_event, hagID)
                 )
                 active_game_monitors[group_hash] = {
                     'thread': monitor_thread,

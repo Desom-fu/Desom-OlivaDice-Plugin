@@ -231,7 +231,7 @@ def unity_reply(plugin_event, Proc):
         if isMatchWordStart(tmp_reast_str, ['加入赌局','参加赌局'], isCommand = True):
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['加入赌局','参加赌局'])
@@ -247,13 +247,13 @@ def unity_reply(plugin_event, Proc):
             # 检查全局冷却时间
             if current_time < demon_coldtime:
                 remaining_time = demon_coldtime - current_time
-                msg = f"[{get_nickname(plugin_event, user_id)}]，恶魔轮盘处于冷却中，请晚点再来吧！\n剩余冷却时间：{remaining_time // 60}分钟{remaining_time % 60}秒。"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，恶魔轮盘处于冷却中，请晚点再来吧！\n剩余冷却时间：{remaining_time // 60}分钟{remaining_time % 60}秒。"
                 replyMsg(plugin_event, msg, True)
                 return
     
             # 检查游戏是否已经开始，如果已经开始，禁止其他玩家加入
             if demon_data['start']:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，游戏已开始，暂无法加入，请等待游戏结束。"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，游戏已开始，暂无法加入，请等待游戏结束。"
                 replyMsg(plugin_event, msg, True)
                 return
     
@@ -274,7 +274,7 @@ def unity_reply(plugin_event, Proc):
                     monitor_thread = threading.Thread(
                         target=game_timeout_monitor,
                         # 将关键信息传入线程，使其可以独立工作
-                        args=(plugin_event, Proc, bot_hash, group_id, stop_event)
+                        args=(plugin_event, Proc, bot_hash, group_id, stop_event, tmp_hagID)
                     )
                     active_game_monitors[group_id] = {
                         'thread': monitor_thread,
@@ -283,13 +283,13 @@ def unity_reply(plugin_event, Proc):
                     monitor_thread.daemon = True # 设置为守护线程，主程序退出时它也退出
                     monitor_thread.start()
     
-                msg = f"玩家[{get_nickname(plugin_event, user_id)}]加入了游戏，等待第二位玩家加入。"
+                msg = f"玩家[{get_nickname(plugin_event, user_id, tmp_hagID)}]加入了游戏，等待第二位玩家加入。"
                 replyMsg(plugin_event, msg, True)
     
             elif len(demon_data['pl']) == 1:
                 # 第二位玩家加入前检查是否已经加入
                 if str(user_id) in demon_data['pl']:
-                    msg = f"[{get_nickname(plugin_event, user_id)}]，你已经是第一位玩家了，无需重复加入！\n请等待第二位玩家加入。"
+                    msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，你已经是第一位玩家了，无需重复加入！\n请等待第二位玩家加入。"
                     replyMsg(plugin_event, msg, True)
                     return
     
@@ -367,19 +367,19 @@ def unity_reply(plugin_event, Proc):
                 msg += item_msg
                 msg += f"\n- 总弹数{str(len(demon_data['clip']))}，实弹数{str(demon_data['clip'].count(1))}"
                 pid = demon_data['pl'][demon_data['turn']]
-                pid_nickname = get_nickname(plugin_event, pid)
+                pid_nickname = get_nickname(plugin_event, pid, tmp_hagID)
                 turn_msg = f"当前是[{pid_nickname}]的回合"
                 save_group_data(bot_hash, group_hash, demon_data)
                 player_ids = [player0, player1]
                 send_forward_text(plugin_event, player_ids, msg, True, f'\n{turn_msg}')
             else:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，游戏已开始，无法加入！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，游戏已开始，无法加入！"
                 replyMsg(plugin_event, msg, True)
                 return
         elif isMatchWordStart(tmp_reast_str, ['开枪','射击'], isCommand = True):
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['开枪','射击'])
@@ -398,12 +398,12 @@ def unity_reply(plugin_event, Proc):
                 return
                 
             if user_id not in demon_data['pl']:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，你不在本局恶魔轮盘中！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，你不在本局恶魔轮盘中！"
                 replyMsg(plugin_event, msg, True)
                 return
             
             if demon_data["pl"][player_turn] != user_id:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，现在不是你的回合，请等待对方操作！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，现在不是你的回合，请等待对方操作！"
                 replyMsg(plugin_event, msg, True)
                 return
             
@@ -428,7 +428,7 @@ def unity_reply(plugin_event, Proc):
         elif isMatchWordStart(tmp_reast_str, ['使用道具'], isCommand = True):
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['使用道具'])
@@ -442,17 +442,17 @@ def unity_reply(plugin_event, Proc):
             add_max = 0
             pangguang_add = 0
             if demon_data["start"] == False:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，恶魔轮盘尚未开始！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，恶魔轮盘尚未开始！"
                 replyMsg(plugin_event, msg, True)
                 return
 
             if user_id not in demon_data['pl']:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，你不是本局玩家，只有当前局内玩家才能行动哦！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，你不是本局玩家，只有当前局内玩家才能行动哦！"
                 replyMsg(plugin_event, msg, True)
                 return
 
             if demon_data["pl"][player_turn] != user_id:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，现在不是你的回合，请等待[{get_nickname(plugin_event, demon_data['pl'][player_turn])}]行动！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，现在不是你的回合，请等待[{get_nickname(plugin_event, demon_data['pl'][player_turn])}]行动！"
                 replyMsg(plugin_event, msg, True)
                 return
             identity_found = demon_data['identity'] 
@@ -476,7 +476,7 @@ def unity_reply(plugin_event, Proc):
             item_dic_lower = {key: value.lower() for key, value in item_dic.items()}  # 生成一个忽略大小写的字典
 
             if args_lower not in item_dic_lower.values():  # 检查输入的名称是否存在于 item_dic（忽略大小写）
-                msg = f"[{get_nickname(plugin_event, user_id)}]，你输入的道具[{args}]不存在，请确认后再使用！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，你输入的道具[{args}]不存在，请确认后再使用！"
                 replyMsg(plugin_event, msg, True)
                 return
 
@@ -485,7 +485,7 @@ def unity_reply(plugin_event, Proc):
                 # 遍历玩家的道具ID，找到第一个匹配的道具名称（忽略大小写）
                 item_idx = next(i for i, item_id in enumerate(player_items) if item_dic[item_id].lower() == args_lower)
             except StopIteration:
-                msg = f"[{get_nickname(plugin_event, user_id)}]，你并没有道具[{args}]，请确认后再使用！"
+                msg = f"[{get_nickname(plugin_event, user_id, tmp_hagID)}]，你并没有道具[{args}]，请确认后再使用！"
                 replyMsg(plugin_event, msg, True)
                 return
 
@@ -494,7 +494,7 @@ def unity_reply(plugin_event, Proc):
             item_name = item_dic[item_id]
             hp_max = demon_data.get('hp_max')
             item_max = demon_data.get('item_max')
-            pid_nickname = get_nickname(plugin_event, str(demon_data["pl"][player_turn]))
+            pid_nickname = get_nickname(plugin_event, str(demon_data["pl"][player_turn]), tmp_hagID)
             msg = f"[{pid_nickname}]使用了道具：{item_name}\n\n"
             player_items.pop(item_idx)
             demon_data['turn_start_time'] = int(time.time()) # 更新回合时间
@@ -860,7 +860,7 @@ def unity_reply(plugin_event, Proc):
 
             next_player_turn = demon_data['turn']  # 获取下一位玩家的 turn
             next_player_id = str(demon_data["pl"][next_player_turn])  # 下一位玩家的 ID
-            next_nickname = get_nickname(plugin_event, next_player_id)
+            next_nickname = get_nickname(plugin_event, next_player_id, tmp_hagID)
             msg += f"\n- 现在轮到[{next_nickname}]行动！"
             if demon_data['hp'][0] <= 0: 
                 winner = demon_data['pl'][1]
@@ -888,7 +888,7 @@ def unity_reply(plugin_event, Proc):
         elif isMatchWordStart(tmp_reast_str, ['查看局势','查询局势'], isCommand = True):
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['查看局势','查询局势'])
@@ -896,18 +896,18 @@ def unity_reply(plugin_event, Proc):
             user_id = str(plugin_event.data.user_id)
             demon_data = load_group_data(bot_hash, group_hash)
             if demon_data['start'] == False:
-                msg = f'[{get_nickname(plugin_event, user_id)}]，当前并没有开始任何一局恶魔轮盘哦！'
+                msg = f'[{get_nickname(plugin_event, user_id, tmp_hagID)}]，当前并没有开始任何一局恶魔轮盘哦！'
                 replyMsg(plugin_event, msg, True)
                 return
             if user_id not in demon_data['pl']:
-                msg = f'[{get_nickname(plugin_event, user_id)}]，只有当前局内玩家能查看局势哦！'
+                msg = f'[{get_nickname(plugin_event, user_id, tmp_hagID)}]，只有当前局内玩家能查看局势哦！'
                 replyMsg(plugin_event, msg, True)
                 return
             # 生成玩家信息
             player0 = str(demon_data['pl'][0])
             player1 = str(demon_data['pl'][1])
-            p0_nick_name = get_nickname(plugin_event, player0)
-            p1_nick_name = get_nickname(plugin_event, player1)
+            p0_nick_name = get_nickname(plugin_event, player0, tmp_hagID)
+            p1_nick_name = get_nickname(plugin_event, player1, tmp_hagID)
             game_turn = demon_data.get('game_turn')
             hp_max = demon_data.get('hp_max')
             item_max = demon_data.get('item_max')
@@ -956,13 +956,13 @@ def unity_reply(plugin_event, Proc):
             msg += f"[{p1_nick_name}]\nhp：{hp1}/{hp_max}\n" + f"道具({len(items_1)}/{item_max})：" +f"\n{item_1}\n\n"
             msg += f"- 总弹数{str(len(demon_data['clip']))}，实弹数{str(demon_data['clip'].count(1))}"
             pid = demon_data['pl'][demon_data['turn']]
-            pid_nickname = get_nickname(plugin_event, pid)
+            pid_nickname = get_nickname(plugin_event, pid, tmp_hagID)
             turn_msg = f"当前是[{pid_nickname}]的回合"
             send_forward_text(plugin_event, [pid], msg, True, f'\n{turn_msg}')
         elif isMatchWordStart(tmp_reast_str, ['恶魔投降'], isCommand = True):
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['恶魔投降'])
@@ -973,20 +973,20 @@ def unity_reply(plugin_event, Proc):
 
             # 判断玩家是否在游戏中
             if demon_data['start'] == False:
-                msg = f'[{get_nickname(plugin_event, user_id)}]，当前并没有开始任何一局恶魔轮盘哦！'
+                msg = f'[{get_nickname(plugin_event, user_id, tmp_hagID)}]，当前并没有开始任何一局恶魔轮盘哦！'
                 replyMsg(plugin_event, msg, True)
                 return
             # 获取当前游戏的玩家信息
             players = demon_data['pl']  # 当前游戏中的两位玩家ID
             if user_id not in players:
-                msg = f'[{get_nickname(plugin_event, user_id)}]，只有当前局内玩家能投降哦！'
+                msg = f'[{get_nickname(plugin_event, user_id, tmp_hagID)}]，只有当前局内玩家能投降哦！'
                 replyMsg(plugin_event, msg, True)
                 return
 
             # 确定投降的玩家和获胜的玩家
             loser = user_id
             winner = str(players[1] if loser == players[0] else players[0])
-            loser_nickname = get_nickname(plugin_event, loser)
+            loser_nickname = get_nickname(plugin_event, loser, tmp_hagID)
             end_msg, demon_data = handle_game_end(
                 plugin_event,
                 group_id=str(group_id),
@@ -1102,7 +1102,7 @@ def unity_reply(plugin_event, Proc):
             # 仅允许管理员、群主或骰主使用此命令
             if not flag_is_from_group:
                 return
-            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash)
+            isEnd = try_resume_monitor_for_group(plugin_event, Proc, bot_hash, group_hash, tmp_hagID)
             if not isEnd:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['结束赌局','强制结束赌局','结束本局赌局'])
