@@ -135,6 +135,7 @@
         "showName": {
             "HP": "寿数",
             "HPMAX": "寿数上限",
+            "HPMAXADD": "寿数上限加值",
             "MP": "灵气",
             "MPMAX": "灵气上限",
 			"MPMAXSUB": "灵气上限减值"
@@ -149,6 +150,7 @@
         },
         "defaultSkillValue": {
 			"MPMAXSUB": 0,
+            "HPMAXADD": 0,
             "金行": 0,
             "木行": 0,
             "水行": 0,
