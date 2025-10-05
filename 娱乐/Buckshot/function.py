@@ -376,14 +376,19 @@ def get_nickname(plugin_event, user_id, tmp_hagID = None):
         )
         if pid_nickname != f"用户{user_id}" or pid_nickname != "用户":
             return pid_nickname
-        plres = plugin_event.get_stranger_info(user_id)
-        if plres['active']:
-            pid_nickname = plres['data']['name']
-            return pid_nickname
         tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, plugin_event.platform['platform'])
         tmp_pcName = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
         if tmp_pcName:
             return tmp_pcName
+        plres = plugin_event.get_stranger_info(user_id)
+        if plres['active']:
+            pid_nickname = plres['data']['name']
+            if pid_nickname != f"用户{user_id}" or pid_nickname != "用户":
+                if pid_nickname == "用户":
+                    return f"用户{user_id}"
+                return pid_nickname
+            else:
+                return f"用户{user_id}"
         return f"用户{user_id}"
     except:
         return f"用户{user_id}"
