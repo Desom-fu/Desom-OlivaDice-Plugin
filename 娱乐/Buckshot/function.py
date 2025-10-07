@@ -366,6 +366,15 @@ def save_user_data(bot_hash, user_hash, data):
 def get_nickname(plugin_event, user_id, tmp_hagID = None):
     """获取用户昵称"""
     try:
+        # 如果是 QQ 频道平台,优先使用人物卡名称
+        if plugin_event.platform['platform'] == 'qqGuild':
+            tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, plugin_event.platform['platform'])
+            tmp_pcName = OlivaDiceCore.pcCard.pcCardDataGetSelectionKey(tmp_pcHash, tmp_hagID)
+            if tmp_pcName:
+                return tmp_pcName
+            # 如果没有人物卡名称,返回默认格式
+            return f"用户{tmp_pcHash}"
+        # 其他平台保持原有逻辑
         pid_nickname = OlivaDiceCore.userConfig.getUserConfigByKey(
             userId=user_id,
             userType='user',

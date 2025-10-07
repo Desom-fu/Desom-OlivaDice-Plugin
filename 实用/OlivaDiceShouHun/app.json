@@ -4,8 +4,8 @@
     "namespace" : "OlivaDiceShouHun",
     "message_mode" : "old_string",
     "info" : "本模块为OlivaDice的狩魂者模块，提供了狩魂者相关指令。",
-    "version" : "1.4.6",
-    "svn" : 20,
+    "version" : "1.5.1",
+    "svn" : 31,
     "compatible_svn" : 101,
     "priority" : 19990,
     "support" : [

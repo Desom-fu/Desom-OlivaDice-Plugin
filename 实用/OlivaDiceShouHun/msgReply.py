@@ -19,6 +19,102 @@ import re
 from functools import wraps
 import copy
 
+def parse_sh_parameters(expr_str, isMatchWordStart, getMatchWordStartRight, skipSpaceStart, parse_m_h=True):
+    """
+    解析 sh 命令中的参数 b/p、m、x、h
+    可以无视参数位置顺序
+    参数:
+        expr_str: 要解析的表达式字符串
+        parse_m_h: 是否解析 m 和 h 参数（默认 True）。后式调用时设为 False
+    返回: cleaned_expr, b_count, p_count, m_flag, x_value, x_flag, h_flag
+    """
+    b_count = 0  # b参数（奖励等级）
+    p_count = 0  # p参数（惩罚等级）
+    m_flag = False  # m参数（去除默认d20）
+    x_value = None  # x参数指定的D20点数
+    x_flag = False  # 是否有x参数
+    h_flag = False  # h参数（暗骰）
+    tmp_reast_str = expr_str
+    
+    # 循环处理所有参数
+    while tmp_reast_str:
+        original_str = tmp_reast_str
+        
+        # 处理h参数（暗骰）- 仅在 parse_m_h=True 时解析
+        if parse_m_h and isMatchWordStart(tmp_reast_str, 'h'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'h')
+            h_flag = True
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 处理b参数（奖励等级）
+        elif isMatchWordStart(tmp_reast_str, 'b'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'b')
+            # 检查是否有数字指定，只取一位
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                b_count += int(tmp_reast_str[0])
+                tmp_reast_str = tmp_reast_str[1:]
+            else:
+                b_count += 1  # 默认为1
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 处理p参数（惩罚等级）
+        elif isMatchWordStart(tmp_reast_str, 'p'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'p')
+            # 检查是否有数字指定，只取一位
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                p_count += int(tmp_reast_str[0])
+                tmp_reast_str = tmp_reast_str[1:]
+            else:
+                p_count += 1  # 默认为1
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 处理m参数（去除默认d20）- 仅在 parse_m_h=True 时解析
+        elif parse_m_h and isMatchWordStart(tmp_reast_str, 'm'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'm')
+            m_flag = True
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 处理x参数（指定D20点数）
+        elif isMatchWordStart(tmp_reast_str, 'x'):
+            tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'x')
+            # x参数后必须跟数字
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
+                # 提取连续的数字
+                num_str = ''
+                i = 0
+                while i < len(tmp_reast_str) and tmp_reast_str[i].isdigit():
+                    num_str += tmp_reast_str[i]
+                    i += 1
+                x_value = int(num_str)
+                x_value = max(0, x_value)  # 最小为0
+                x_flag = True
+                tmp_reast_str = tmp_reast_str[len(num_str):]
+            # 移除可能的+号
+            if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
+                tmp_reast_str = tmp_reast_str[1:]
+            continue
+        
+        # 如果没有匹配到任何参数，跳出循环
+        if tmp_reast_str == original_str:
+            break
+    
+    # 跳过空格并返回清理后的表达式
+    cleaned_expr = skipSpaceStart(tmp_reast_str)
+    
+    return cleaned_expr, b_count, p_count, m_flag, x_value, x_flag, h_flag
+
 def unity_init(plugin_event, Proc):
     pass
 
@@ -226,91 +322,108 @@ def unity_reply(plugin_event, Proc):
                         resDefault = {}
                     )
                 )
-            flag_hide = False
-            if isMatchWordStart(tmp_reast_str, 'h'):
-                tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'h')
-                flag_hide = True
-            tmp_reast_str = skipSpaceStart(tmp_reast_str)
             
-            # 处理奖励/惩罚等级
-            flag_bp_type = 0  # 0无 1奖励 2惩罚
-            flag_bp_count = 1
-            if isMatchWordStart(tmp_reast_str, 'b'):
-                flag_bp_type = 1
-                tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'b')
-                # 检查是否有数字指定
-                if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
-                    flag_bp_count = int(tmp_reast_str[0])
-                    tmp_reast_str = tmp_reast_str[1:]
-                # 移除可能的+号
-                if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
-                    tmp_reast_str = tmp_reast_str[1:]
-            elif isMatchWordStart(tmp_reast_str, 'p'):
-                flag_bp_type = 2
-                tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'p')
-                # 检查是否有数字指定
-                if len(tmp_reast_str) > 0 and tmp_reast_str[0].isdigit():
-                    flag_bp_count = int(tmp_reast_str[0])
-                    tmp_reast_str = tmp_reast_str[1:]
-                # 移除可能的+号
-                if len(tmp_reast_str) > 0 and tmp_reast_str[0] == '+':
-                    tmp_reast_str = tmp_reast_str[1:]
-            tmp_reast_str = skipSpaceStart(tmp_reast_str)
-            
-            # 分割前后表达式
-            is_number = False
-            is_x = False
+            # 分割前后表达式（用#分隔），h参数会在解析函数中处理
             parts = tmp_reast_str.split('#')
-            front_expr = parts[0].strip() if len(parts) > 0 and parts[0].strip() else None
-            front_expr_str = front_expr
-            back_expr_str = parts[1].strip() if len(parts) > 1 else '10'
-            dice_20 = '1D20' # 默认值 1D20
+            front_part = parts[0].strip() if len(parts) > 0 else ''
+            back_part = parts[1].strip() if len(parts) > 1 else '10'
+            
+            # 使用新的参数解析函数处理前式（包括h参数）
+            front_part, flag_bp_count, flag_p_count, flag_no_default_d20, x_dice_value, is_x, flag_hide = parse_sh_parameters(
+                front_part, isMatchWordStart, getMatchWordStartRight, skipSpaceStart
+            )
+            
+            # 确定奖励/惩罚类型
+            flag_bp_type = 0  # 0无 1奖励 2惩罚
+            if flag_bp_count > 0 and flag_p_count > 0:
+                # 两者都有，取净值
+                if flag_bp_count > flag_p_count:
+                    flag_bp_type = 1
+                    flag_bp_count = flag_bp_count - flag_p_count
+                elif flag_p_count > flag_bp_count:
+                    flag_bp_type = 2
+                    flag_bp_count = flag_p_count - flag_bp_count
+                else:
+                    flag_bp_type = 0
+                    flag_bp_count = 0
+            elif flag_bp_count > 0:
+                flag_bp_type = 1
+            elif flag_p_count > 0:
+                flag_bp_type = 2
+                flag_bp_count = flag_p_count
+            
+            # 使用新的参数解析函数处理后式（后式不解析 m 和 h 参数）
+            back_part, back_flag_bp_count, back_flag_p_count, _, back_x_dice_value, is_back_x, _ = parse_sh_parameters(
+                back_part, isMatchWordStart, getMatchWordStartRight, skipSpaceStart, parse_m_h=False
+            )
+            
+            # 确定后式的奖励/惩罚类型
+            back_flag_bp_type = 0
+            if back_flag_bp_count > 0 and back_flag_p_count > 0:
+                if back_flag_bp_count > back_flag_p_count:
+                    back_flag_bp_type = 1
+                    back_flag_bp_count = back_flag_bp_count - back_flag_p_count
+                elif back_flag_p_count > back_flag_bp_count:
+                    back_flag_bp_type = 2
+                    back_flag_bp_count = back_flag_p_count - back_flag_bp_count
+                else:
+                    back_flag_bp_type = 0
+                    back_flag_bp_count = 0
+            elif back_flag_bp_count > 0:
+                back_flag_bp_type = 1
+            elif back_flag_p_count > 0:
+                back_flag_bp_type = 2
+                back_flag_bp_count = back_flag_p_count
+            
+            # 处理前式表达式
+            front_expr = front_part
+            front_expr_str = front_part
+            back_expr_str = back_part if back_part else '10'
+            
+            # 处理~参数（将计算结果加到人物卡shm）
+            shm_add_value = None
+            shm_add_expr = None
+            shm_add_expr_str = None
+            if front_expr and '~' in front_expr:
+                front_parts = front_expr.split('~', 1)
+                front_expr = front_parts[0].strip() if front_parts[0].strip() else None
+                front_expr_str = front_expr
+                shm_add_expr_str = front_parts[1].strip() if len(front_parts) > 1 and front_parts[1].strip() else None
+                if shm_add_expr_str:
+                    # 技能替换
+                    shm_add_expr, _ = replace_skills(shm_add_expr_str.replace('=', '').replace(' ', ''), skill_valueTable, tmp_pcCardRule)
+            
+            # 确定 dice_20 的值
+            dice_20 = '1D20'  # 默认值
+            is_number = False
+            
+            # 如果 x 参数有指定
+            if is_x and x_dice_value is not None:
+                dice_20 = str(x_dice_value)
+                # m参数会被x覆盖（只要x不是0）
+                if flag_no_default_d20 and x_dice_value > 0:
+                    flag_no_default_d20 = False
+            # 如果 m 参数有指定（且没有被 x 覆盖）
+            elif flag_no_default_d20:
+                dice_20 = '0'
+            
             if not back_expr_str:
                 back_expr_str = '10'
+            
             # 出值解析
             if front_expr:
                 # 完全指定点数
                 if front_expr.isdigit():
                     is_number = True
-                # 指定D20点数
-                elif isMatchWordStart(front_expr, 'x'):
-                    front_expr = getMatchWordStartRight(front_expr, 'x')
-                    front_expr_str = front_expr
-                    # 用 + 来分隔
-                    if '+' in front_expr:
-                        parts_2 = front_expr.split('+', 1)
-                        dice_20 = parts_2[0].strip() if parts_2[0].strip() else '1D20'
-                        front_expr = parts_2[1].strip() if parts_2[1].strip() else None
-                        front_expr_str = front_expr
-                        # 限定x后面最多是纯数字
-                        if not dice_20.isdigit():
-                            dice_20 = '1D20'
-                        else:
-                            # 最小是0
-                            dice_num = int(dice_20)
-                            dice_num = max(0, dice_num)
-                            dice_20 = str(dice_num)
-                            is_x = True
-                    else:
-                        if front_expr.isdigit():
-                            dice_num = int(front_expr)
-                            dice_num = max(0, dice_num)
-                            dice_20 = str(dice_num)
-                            front_expr = None
-                            is_x = True
-                        else:
-                            # 抛出错误
-                            front_expr = front_expr_str
-                if front_expr:
+                # 处理表达式中的 Xd20
+                elif not is_x:  # 如果没有用 x 参数指定，则处理表达式中的 d20
                     # 1. 只匹配 Xd20+
                     match_xd20_plus = re.match(r'^(\d*)[dD]20\s*\+\s*', front_expr, re.IGNORECASE)
                     if match_xd20_plus:
                         # 处理 X（D20 视为 1D20）
                         x_str = match_xd20_plus.group(1)
                         x = int(x_str) if x_str else 1  # 无数字时默认为1
-                        # 有 x 限制就跳过
-                        if not is_x:
-                            dice_20 = f"{x}D20"
+                        dice_20 = f"{x}D20"
                         # 移除 Xd20+ 部分
                         front_expr = front_expr[len(match_xd20_plus.group(0)):].strip()
                         front_expr_str = front_expr if front_expr else None
@@ -321,74 +434,19 @@ def unity_reply(plugin_event, Proc):
                         if match_pure_xd20:
                             x_str = match_pure_xd20.group(1)
                             x = int(x_str) if x_str else 1  # D20 视为 1D20
-                            # 有 x 限制就跳过
-                            if not is_x:
-                                dice_20 = f"{x}D20"
+                            dice_20 = f"{x}D20"
                             front_expr = front_expr[len(match_pure_xd20.group(0)):].strip()
                             front_expr_str = front_expr if front_expr else None
-            # 处理挑战奖励/惩罚等级
-            back_flag_bp_type = 0
-            back_flag_bp_count = 1
-            if back_expr_str:
-                if isMatchWordStart(back_expr_str, 'b'):
-                    back_flag_bp_type = 1
-                    back_expr_str = getMatchWordStartRight(back_expr_str, 'b')
-                    # 检查是否有数字指定
-                    if len(back_expr_str) > 0 and back_expr_str[0].isdigit():
-                        back_flag_bp_count = int(back_expr_str[0])
-                        back_expr_str = back_expr_str[1:]
-                    # 移除可能的+号
-                    if len(back_expr_str) > 0 and back_expr_str[0] == '+':
-                        back_expr_str = back_expr_str[1:]
-                elif isMatchWordStart(back_expr_str, 'p'):
-                    back_flag_bp_type = 2
-                    back_expr_str = getMatchWordStartRight(back_expr_str, 'p')
-                    # 检查是否有数字指定
-                    if len(back_expr_str) > 0 and back_expr_str[0].isdigit():
-                        back_flag_bp_count = int(back_expr_str[0])
-                        back_expr_str = back_expr_str[1:]
-                    # 移除可能的+号
-                    if len(back_expr_str) > 0 and back_expr_str[0] == '+':
-                        back_expr_str = back_expr_str[1:]
-                back_expr_str = skipSpaceStart(back_expr_str)
             
-            # 处理挑战值的固定d20
-            is_back_x = False
+            # 处理挑战值的固定d20（使用解析出的 back_x_dice_value）
             back_fixed_d20 = 0
             back_fixed_display = ''
-            if isMatchWordStart(back_expr_str, 'x'):
-                back_expr_str = getMatchWordStartRight(back_expr_str, 'x')
-                back_expr_str_temp = back_expr_str
-                # 用 + 来分隔
-                if '+' in back_expr_str:
-                    parts_2 = back_expr_str.split('+', 1)
-                    back_dice_str = parts_2[0].strip() if parts_2[0].strip() else None
-                    back_expr_str = parts_2[1].strip() if len(parts_2) > 1 and parts_2[1].strip() else ''
-                    if back_dice_str and back_dice_str.isdigit():
-                        back_fixed_d20 = max(1, int(back_dice_str))
-                        is_back_x = True
-                    else:
-                        # 错误，恢复原状
-                        back_expr_str = back_expr_str_temp
+            if is_back_x and back_x_dice_value is not None:
+                back_fixed_d20 = max(1, back_x_dice_value)
+                if 1 <= back_fixed_d20 <= 20:
+                    back_fixed_display = f"1D20({back_fixed_d20})"
                 else:
-                    if back_expr_str.isdigit():
-                        back_fixed_d20 = max(1, int(back_expr_str))
-                        is_back_x = True
-                        back_expr_str = ''
-                    else:
-                        # 错误，恢复原状
-                        back_expr_str = back_expr_str_temp
-                if is_back_x:
-                    if 1 <= back_fixed_d20 <= 20:
-                        back_fixed_display = f"1D20({back_fixed_d20})"
-                    else:
-                        back_fixed_display = f"固定值({back_fixed_d20})"
-                else:
-                    dictTValue['tRollPara'] = back_expr_str_temp
-                    dictTValue['tResult'] = "错误的挑战指定点数"
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
-                    return
+                    back_fixed_display = f"固定值({back_fixed_d20})"
             
             # 获取模板配置
             tmp_template_name = 'default'
@@ -417,7 +475,7 @@ def unity_reply(plugin_event, Proc):
                     error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_d20.resError, dictStrCustom, dictTValue)
                     dictTValue['tResult'] = f"错误的指定点数：{error_msg}"
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
+                    replyMsg(plugin_event, tmp_reply_str.strip())
                     return
 
             if front_expr:
@@ -430,7 +488,7 @@ def unity_reply(plugin_event, Proc):
                     error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_front.resError, dictStrCustom, dictTValue)
                     dictTValue['tResult'] = f"错误的出值：{error_msg}"
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
+                    replyMsg(plugin_event, tmp_reply_str.strip())
                     return
                 if not is_number:
                     front_result = rd_d20.resInt + rd_front.resInt
@@ -439,7 +497,15 @@ def unity_reply(plugin_event, Proc):
                         base_front_str = f"{front_detail}={front_result}"
                         if front_result != rd_d20.resInt:
                             base_front_str = f"{front_detail}={rd_d20.resInt}+{rd_front.resInt}={front_result}"
-                    if is_x:
+                    if flag_no_default_d20:
+                        # m参数去除默认d20
+                        front_result = rd_front.resInt
+                        # 如果有详细掷骰过程，显示完整计算
+                        if rd_front.resDetail and rd_front.resDetail != str(rd_front.resInt):
+                            front_detail = f"{front_detail}={rd_front.resDetail}={rd_front.resInt}"
+                        else:
+                            front_detail = f"{front_detail}={rd_front.resInt}"
+                    elif is_x:
                         front_detail = f"1D20+{base_front_str}" if 1 <= rd_d20.resInt <= 20 else f"固定值({dice_20})+{base_front_str}"
                     else:
                         front_detail = f"{dice_20}+{base_front_str}"
@@ -449,10 +515,41 @@ def unity_reply(plugin_event, Proc):
                     front_detail = front_detail
             else:
                 front_result = rd_d20.resInt
-                if is_x:
+                if flag_no_default_d20:
+                    # m参数去除默认d20，直接为0
+                    front_result = 0
+                    front_detail = "0"
+                elif is_x:
                     front_detail = f"1D20={front_result}" if 1 <= rd_d20.resInt <= 20 else f"固定值({dice_20})={front_result}"
                 else:
                     front_detail = f"{dice_20}={front_result}"
+            
+            # 处理~参数，计算要添加到shm的值，并加到前式结果
+            if shm_add_expr:
+                # 获取~表达式的显示细节
+                shm_add_expr_display, shm_add_detail = replace_skills(shm_add_expr_str.replace('=', '').replace(' ', ''), skill_valueTable, tmp_pcCardRule)
+                rd_shm = OlivaDiceCore.onedice.RD(shm_add_expr, tmp_template_customDefault)
+                rd_shm.roll()
+                if rd_shm.resError != None:
+                    dictTValue['tRollPara'] = shm_add_expr_str
+                    error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_shm.resError, dictStrCustom, dictTValue)
+                    dictTValue['tResult'] = f"错误的shm增加值：{error_msg}"
+                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
+                    replyMsg(plugin_event, tmp_reply_str.strip())
+                    return
+                shm_add_value = rd_shm.resInt
+                
+                # 将~表达式的结果加到前式结果中
+                old_front_result = front_result
+                front_result += shm_add_value
+                
+                # 更新front_detail显示，添加~部分
+                if rd_shm.resDetail and rd_shm.resDetail != str(shm_add_value):
+                    shm_display = f"{shm_add_detail}={rd_shm.resDetail}={shm_add_value}"
+                else:
+                    shm_display = f"{shm_add_detail}={shm_add_value}"
+                
+                front_detail = f"{front_detail}+({shm_display})={front_result}"
 
             # 计算后项
             # 处理技能名和表达式
@@ -467,7 +564,7 @@ def unity_reply(plugin_event, Proc):
                 error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_back.resError, dictStrCustom, dictTValue)
                 dictTValue['tResult'] = f"错误的挑战值：{error_msg}"
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
-                replyMsg(plugin_event, tmp_reply_str)
+                replyMsg(plugin_event, tmp_reply_str.strip())
                 return
             
             back_result = rd_back.resInt
@@ -610,25 +707,65 @@ def unity_reply(plugin_event, Proc):
             else:
                 dictTValue['tSuccessLevel'] = ''
             
+            # 更新人物卡shm值
+            if shm_add_value is not None and tmp_pc_name:
+                # 获取当前shm值
+                current_shm = OlivaDiceCore.pcCard.pcCardDataGetBySkillName(
+                    tmp_pcHash,
+                    'SHM',
+                    hagId=tmp_hagID
+                )
+                current_shm_value = int(current_shm) if current_shm is not None else 0
+                new_shm_value = current_shm_value + shm_add_value
+                
+                # 更新shm值
+                OlivaDiceCore.pcCard.pcCardDataSetBySkillName(
+                    tmp_pcHash,
+                    'SHM',
+                    new_shm_value,
+                    tmp_pc_name,
+                    hagId=tmp_hagID
+                )
+                
+                # 自动更新群名片
+                OlivaDiceCore.msgReply.trigger_auto_sn_update(
+                    plugin_event,
+                    tmp_pc_id,
+                    tmp_pc_platform,
+                    tmp_hagID,
+                    dictTValue
+                )
+                
+                # 添加shm更新信息到回复中
+                dictTValue['tShmOld'] = current_shm_value
+                dictTValue['tShmAddValue'] = shm_add_value
+                dictTValue['tShmNew'] = new_shm_value
+                dictTValue['tShmAdd'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                    dictStrCustom['strShShmAdd'], 
+                    dictTValue
+                )
+            else:
+                dictTValue['tShmAdd'] = ''
+            
             # 根据是否暗骰选择回复方式
             if is_at:
                 if flag_hide and flag_is_from_group:
                     dictTValue['tGroupId'] = str(plugin_event.data.group_id)
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShHideAtOther'], dictTValue)
                     replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShHideShowAtOther'], dictTValue))
-                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str.strip())
                 else:
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShResultAtOther'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
+                    replyMsg(plugin_event, tmp_reply_str.strip())
             else:
                 if flag_hide and flag_is_from_group:
                     dictTValue['tGroupId'] = str(plugin_event.data.group_id)
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShHide'], dictTValue)
                     replyMsg(plugin_event, OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShHideShow'], dictTValue))
-                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str)
+                    OlivaDiceCore.msgReply.replyMsgPrivateByEvent(plugin_event, tmp_reply_str.strip())
                 else:
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShResult'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str)
+                    replyMsg(plugin_event, tmp_reply_str.strip())
 
 def format_long_dice_rolls(detail_string):
     """
