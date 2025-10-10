@@ -257,7 +257,7 @@ def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change, upgr
         if upgrade_points_change != 0:
             tmp_skill_old = OlivaDiceCore.pcCard.pcCardDataGetBySkillName(
                 tmp_pcHash,
-                '升级点',
+                '成长点',
                 hagId=tmp_hagID
             )
             current_skill = int(tmp_skill_old) if tmp_skill_old is not None else 0
@@ -265,7 +265,7 @@ def update_pc_luck_and_skill(plugin_event, user_id, tmp_hagID, luck_change, upgr
             
             OlivaDiceCore.pcCard.pcCardDataSetBySkillName(
                 tmp_pcHash,
-                '升级点',
+                '成长点',
                 new_skill,
                 tmp_pc_name,
                 hagId=tmp_hagID
