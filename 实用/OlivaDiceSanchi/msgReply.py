@@ -67,9 +67,85 @@ def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
                     f'{{{var}}}',
                     f'{var}({skill_valueTable[var]})'
                 )
-    # 替换 0dX 为 0
-    replaced_expr = re.sub(r'(?:\b0|\(0\))[dD]\d+\b', '0', replaced_expr)
+    # 处理括号内结果≤0的情况，如 (力量-5)d4
+    replaced_expr = handle_negative_dice(replaced_expr)
     return replaced_expr, replaced_detail
+
+def handle_negative_dice(expr_str):
+    """
+    处理表达式中括号内计算结果≤0的骰子表达式
+    例如：(3-5)d4 -> 先计算括号内=-2，然后替换为0
+    例如：((3)-3)d4 -> 先计算括号内=0，然后替换为0
+    支持嵌套括号
+    """
+    if not expr_str:
+        return expr_str
+    
+    def find_matching_paren(s, start_pos):
+        """
+        从 start_pos 开始找到匹配的右括号位置
+        处理嵌套括号
+        """
+        count = 1
+        pos = start_pos + 1
+        while pos < len(s) and count > 0:
+            if s[pos] == '(':
+                count += 1
+            elif s[pos] == ')':
+                count -= 1
+            pos += 1
+        return pos - 1 if count == 0 else -1
+    
+    # 反复处理，直到没有可替换的内容
+    max_iterations = 20  # 防止无限循环
+    iteration = 0
+    
+    while iteration < max_iterations:
+        changed = False
+        i = 0
+        
+        while i < len(expr_str):
+            # 查找 ( 后跟随的内容，然后是 )d 或 )D
+            if expr_str[i] == '(':
+                # 找到匹配的右括号
+                close_pos = find_matching_paren(expr_str, i)
+                
+                if close_pos != -1 and close_pos + 1 < len(expr_str):
+                    # 检查右括号后是否跟着 d 或 D
+                    if expr_str[close_pos + 1].lower() == 'd':
+                        # 找到骰子面数
+                        dice_match = re.match(r'd(\d+)\b', expr_str[close_pos + 1:], re.IGNORECASE)
+                        if dice_match:
+                            # 提取括号内容
+                            paren_content = expr_str[i + 1:close_pos]
+                            dice_sides = dice_match.group(1)
+                            
+                            try:
+                                # 只允许数字、运算符、空格和括号（包括乘方^）
+                                safe_expr = paren_content.strip()
+                                if re.match(r'^[\d\s+\-*/().^]+$', safe_expr):
+                                    # 将 ^ 转换为 Python 的 ** 运算符
+                                    eval_expr = safe_expr.replace('^', '**')
+                                    # 计算表达式
+                                    result = eval(eval_expr)
+                                    
+                                    if result <= 0:
+                                        # 替换整个 (...)dX 为 0
+                                        end_pos = close_pos + 1 + len(dice_match.group(0))
+                                        expr_str = expr_str[:i] + '0' + expr_str[end_pos:]
+                                        changed = True
+                                        break  # 重新开始扫描
+                            except:
+                                # 计算失败，跳过
+                                pass
+            i += 1
+        
+        if not changed:
+            break
+        iteration += 1
+    # 处理 0dX
+    expr_str = re.sub(r'(?:\b0|\(0\))[dD]\d+\b', '0', expr_str)
+    return expr_str
 
 def parse_bp_parameters(expr_str):
     """

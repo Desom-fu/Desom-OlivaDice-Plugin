@@ -4,8 +4,8 @@
     "namespace" : "OlivaDiceCats",
     "message_mode" : "old_string",
     "info" : "喵影奇谋插件，cats指令",
-    "version" : "1.0.6",
-    "svn" : 1,
+    "version" : "1.0.7",
+    "svn" : 2,
     "compatible_svn" : 100,
     "priority" : 19990,
     "support" : [
