@@ -21,6 +21,7 @@
  * `pctable` -- 输入pctable发送表格图，可自行添加表格，基本就是上面的 cocmeme 复制了一份过来。注意本插件含Data。论坛发布地址：不会发布
  * `AutoReaction` -- 可以给你每发一条消息都贴表情，可以自定义user和表情id。论坛发布地址：暂未发布，如果等我懒癌不发作写md文档就发布
  * `jrlp` -- 抽取今日老婆喽~论坛发布地址：https://forum.olivos.run/d/856
+ * `OlivaDiceLexNinjutsu` -- 语音释放忍术！论坛发布地址：https://forum.olivos.run/d/863
 
 ### 💪实用
  * `OlivaDiceShouHun` -- 狩魂者插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/827
