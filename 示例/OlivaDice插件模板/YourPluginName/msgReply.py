@@ -38,7 +38,6 @@ def unity_reply(plugin_event, Proc):
     skipSpaceStart = OlivaDiceCore.msgReply.skipSpaceStart
     skipToRight = OlivaDiceCore.msgReply.skipToRight
     msgIsCommand = OlivaDiceCore.msgReply.msgIsCommand
-    to_half_width = OlivaDiceCore.msgReply.to_half_width
 
     tmp_at_str = OlivOS.messageAPI.PARA.at(plugin_event.base_info['self_id']).CQ()
     tmp_id_str = str(plugin_event.base_info['self_id'])
@@ -52,7 +51,6 @@ def unity_reply(plugin_event, Proc):
     tmp_command_str_2 = '。'
     tmp_command_str_3 = '/'
     tmp_reast_str = plugin_event.data.message
-    tmp_reast_str = to_half_width(tmp_reast_str)
     flag_force_reply = False
     flag_is_command = False
     flag_is_from_host = False
