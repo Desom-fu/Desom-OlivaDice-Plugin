@@ -16,6 +16,7 @@
  * `Buckshot` -- 超级牛逼的26道具3模式恶魔轮盘赌！论坛发布地址：https://forum.olivos.run/d/858-26-3
  * `echo` -- 让你的骰娘echo你的内容！论坛发布地址：不会发布
  * `JrrpChange` -- 可以根据jrrp大小添加对应的文案。论坛发布地址：https://forum.olivos.run/d/837-jrrpchangejrrp
+ * `qianliexian` -- 电所有人前列腺！！！！！论坛发布地址：https://forum.olivos.run/d/865
  * `OlivaDicePuke` -- 一个自用的跑团抽扑克插件。论坛发布地址：不会发布
  * `cocmeme` -- 写这个插件的原因是不想制作牌堆。输入 cocmeme 发送梗图，可自行添加梗图，注意本插件含Data。论坛发布地址：https://forum.olivos.run/d/615
  * `pctable` -- 输入pctable发送表格图，可自行添加表格，基本就是上面的 cocmeme 复制了一份过来。注意本插件含Data。论坛发布地址：不会发布

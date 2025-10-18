@@ -43,14 +43,24 @@ def get_luck_text(luck_num, luck_dict):
 def unity_init(plugin_event, Proc):
     pass
 
-def data_init(plugin_event, Proc):
-    # 初始化运势文本json文件
-    jrrp_text_path = os.path.join('plugin', 'data', 'jrrpChange')
+def init_luck_text_for_bot(bot_hash, default_luck_dict, old_luck_dict=None):
+    """为单个bot初始化运势文本配置"""
+    jrrp_text_path = os.path.join('plugin', 'data', 'jrrpChange', bot_hash)
     if not os.path.exists(jrrp_text_path):
         os.makedirs(jrrp_text_path)
     
     json_path = os.path.join(jrrp_text_path, 'luck_text.json')
     
+    # 如果有旧配置，优先使用旧配置
+    if old_luck_dict is not None and not os.path.exists(json_path):
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(old_luck_dict, f, ensure_ascii=False, indent=4)
+    # 如果json文件不存在，则创建并写入默认值
+    elif not os.path.exists(json_path):
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(default_luck_dict, f, ensure_ascii=False, indent=4)
+
+def data_init(plugin_event, Proc):
     # 默认运势字典
     default_luck_dict = {
         "1": "哇哦，大成功诶！但是这不是coc，祝你好运！",
@@ -69,13 +79,31 @@ def data_init(plugin_event, Proc):
         "100": "哇哦，100诶！那你一定能一把理论测试如果Y PP毕加索 秒杀大屠杀 AP+脆肚！"
     }
     
-    # 如果json文件不存在，则创建并写入默认值
-    if not os.path.exists(json_path):
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(default_luck_dict, f, ensure_ascii=False, indent=4)
+    # 兼容性检测：检查旧的文件路径
+    old_json_path = os.path.join('plugin', 'data', 'jrrpChange', 'luck_text.json')
+    old_luck_dict = None
+    if os.path.exists(old_json_path):
+        try:
+            # 读取旧文件内容
+            with open(old_json_path, 'r', encoding='utf-8') as f:
+                old_luck_dict = json.load(f)
+        except Exception as e:
+            print(f"读取旧配置文件失败: {e}")
+    
+    # 遍历所有bot进行初始化
+    if 'bot_info_dict' in Proc.Proc_data:
+        for bot_hash in Proc.Proc_data['bot_info_dict']:
+            init_luck_text_for_bot(bot_hash, default_luck_dict, old_luck_dict)
+    
+    # 删除旧文件（在所有bot都迁移完成后）
+    if old_luck_dict is not None and os.path.exists(old_json_path):
+        try:
+            os.remove(old_json_path)
+        except Exception as e:
+            print(f"删除旧配置文件失败: {e}")
 
-def load_luck_dict():
-    json_path = os.path.join('plugin', 'data', 'jrrpChange', 'luck_text.json')
+def load_luck_dict(bot_hash):
+    json_path = os.path.join('plugin', 'data', 'jrrpChange', bot_hash, 'luck_text.json')
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             raw_luck_dict = json.load(f)
@@ -141,7 +169,7 @@ def poke_jrrp(plugin_event, Proc):
         if jrrp_mode == 1:
             hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
         tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-        luck_dict = load_luck_dict()
+        luck_dict = load_luck_dict(plugin_event.bot_info.hash)
         tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
         dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
         dictTValue['tJrrpText'] = tmp_jrrp_reply
@@ -177,7 +205,6 @@ def unity_reply(plugin_event, Proc):
     tmp_command_str_2 = '。'
     tmp_command_str_3 = '/'
     tmp_reast_str = plugin_event.data.message
-    tmp_reast_str = OlivaDiceCore.msgReply.to_half_width(tmp_reast_str)
     flag_force_reply = False
     flag_is_command = False
     flag_is_from_host = False
@@ -307,7 +334,7 @@ def unity_reply(plugin_event, Proc):
             if jrrp_mode == 1:
                 hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            luck_dict = load_luck_dict()
+            luck_dict = load_luck_dict(plugin_event.bot_info.hash)
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
@@ -327,7 +354,7 @@ def unity_reply(plugin_event, Proc):
             if jrrp_mode == 1:
                 hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            luck_dict = load_luck_dict()
+            luck_dict = load_luck_dict(plugin_event.bot_info.hash)
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
@@ -347,7 +374,7 @@ def unity_reply(plugin_event, Proc):
             if jrrp_mode == 1:
                 hash_tmp.update(str(plugin_event.bot_info.hash).encode(encoding='UTF-8'))
             tmp_jrrp_int = int(int(hash_tmp.hexdigest(), 16) % 100) + 1
-            luck_dict = load_luck_dict()
+            luck_dict = load_luck_dict(plugin_event.bot_info.hash)
             tmp_jrrp_reply = get_luck_text(int(tmp_jrrp_int), luck_dict)
             dictTValue['tJrrpResult'] = str(tmp_jrrp_int)
             dictTValue['tJrrpText'] = tmp_jrrp_reply
