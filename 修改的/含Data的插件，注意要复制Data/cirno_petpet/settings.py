@@ -2,7 +2,7 @@
 BASE_PATH = [".", "plugin", "data"]
 PIC_PATH = [".", "data", "images", "PetPetFrames" , "temp"]
 output_pic_name = 'tempPetPet-{member_id}.gif'
-recheck = r"^摸\s*(?:\[CQ:at,qq=(\d{5,10})\]|(\d{5,10}))\s*$"
+recheck = r"^摸\s*(?:\[CQ:at,qq=(\d{5,10})(?:,name=[^\]]+)?\]|(\d{5,10}))\s*$"
 
 frame_spec = [
     (27, 31, 86, 90),

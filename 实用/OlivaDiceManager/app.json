@@ -1,0 +1,23 @@
+{
+    "name" : "群管功能",
+    "author" : "Desom-fu",
+    "namespace" : "OlivaDiceManager",
+    "message_mode" : "old_string",
+    "info" : "提供群管理功能，包括设置群名、管理员、禁言、踢人、点赞、群名片、群头衔、群公告等功能。具体通过[.help 群管]查看",
+    "version" : "1.0.0",
+    "svn" : 1,
+    "compatible_svn" : 100,
+    "priority" : 19990,
+    "support" : [
+        {
+            "sdk" : "onebot",
+            "platform" : "qq",
+            "model" : "all"
+        },
+        {
+            "sdk" : "all",
+            "platform" : "all",
+            "model" : "all"
+        }
+    ]
+}

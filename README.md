@@ -32,6 +32,7 @@
  * `OlivaDiceSortCOC` -- 排序制卡结果并合并转发，便于快速找到最高总属性的结果。论坛发布地址：https://forum.olivos.run/d/836-olivadicesortcoc
  * `SmartInterceptor` -- 拦截词系统，包含三种拦截方式。论坛发布地址：https://forum.olivos.run/d/707-smartinterceptor
  * `messageRecall` -- 撤回消息插件。论坛发布地址：https://forum.olivos.run/d/860
+ * `OlivaDiceManager` -- 群管插件。论坛发布地址：https://forum.olivos.run/d/866-olivadicemanager
  
 
 ### 📚示例
