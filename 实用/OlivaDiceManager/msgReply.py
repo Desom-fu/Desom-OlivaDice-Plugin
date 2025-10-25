@@ -9,6 +9,7 @@ import OlivaDiceCore
 import json
 import requests
 import os
+import re
 
 def unity_init(plugin_event, Proc):
     # 插件初始化
@@ -212,20 +213,35 @@ def unity_reply(plugin_event, Proc):
             return user_name
         
         # 解析@用户函数
-        def parse_at_user(message_str):
-            """解析消息中的@用户,返回(用户ID列表, 去除@后的消息)"""
-            tmp_msg_obj = OlivOS.messageAPI.Message_templet('old_string', message_str)
-            user_ids = []
-            remaining_msg = message_str
+        def parse_at_user(tmp_reast_str):
+            """
+            解析消息中的@用户
+            返回: is_at, at_user_id, cleaned_message_str
+            """
+            tmp_reast_str_para = OlivOS.messageAPI.Message_templet('old_string', tmp_reast_str)
+            at_user_id = None
+            new_tmp_reast_str_parts = []
+            is_at = False
             
-            for msg_part in tmp_msg_obj.data:
-                if type(msg_part) is OlivOS.messageAPI.PARA.at:
-                    user_id = str(msg_part.data['id'])
-                    user_ids.append(user_id)
-                    # 从消息中移除这个@
-                    remaining_msg = remaining_msg.replace(msg_part.CQ(), '', 1)
+            for part in tmp_reast_str_para.data:
+                if isinstance(part, OlivOS.messageAPI.PARA.at):
+                    at_user_id = part.data['id']
+                    tmp_userName01 = get_user_name(at_user_id)
+                    dictTValue['tUserName01'] = tmp_userName01
+                    is_at = True
+                else:
+                    if isinstance(part, OlivOS.messageAPI.PARA.text):
+                        new_tmp_reast_str_parts.append(part.data['text'])
             
-            return user_ids, remaining_msg.strip()
+            if is_at:
+                if plugin_event.platform['platform'] in ['qqGuild']:
+                    # QQ频道平台直接返回解析结果，不进行权限检查
+                    cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+                    return is_at, at_user_id, cleaned_message
+            
+            # 返回解析结果
+            cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+            return is_at, at_user_id, cleaned_message
         
         # 获取账号配置(用于调用API)
         def get_account_config():
@@ -341,12 +357,14 @@ def unity_reply(plugin_event, Proc):
                 tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['名片','群名片'])
                 tmp_reast_str = skipSpaceStart(tmp_reast_str)
                 
-                # 解析@用户
-                user_ids, content = parse_at_user(tmp_reast_str)
+                # 使用新的解析函数
+                is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
                 
                 # 判断是否为自己
                 target_user_id = None
-                if '自己' in tmp_reast_str or not user_ids:
+                content = None
+                
+                if '自己' in tmp_reast_str or not is_at:
                     target_user_id = plugin_event.data.user_id
                     # 提取内容(去除"自己")
                     content = tmp_reast_str.replace('自己', '').strip()
@@ -354,7 +372,8 @@ def unity_reply(plugin_event, Proc):
                     if not check_permission():
                         replyMsg(plugin_event, dictStrCustom['strNeedAdmin'])
                         return
-                    target_user_id = user_ids[0]
+                    target_user_id = at_user_id
+                    content = cleaned_message
                 
                 if not content:
                     replyMsg(plugin_event, dictStrCustom['strNoContent'])
@@ -429,20 +448,20 @@ def unity_reply(plugin_event, Proc):
                     replyMsg(plugin_event, dictStrCustom['strAdminParamError'])
                     return
                 
-                # 解析@用户
-                user_ids, _ = parse_at_user(tmp_reast_str)
-                if not user_ids:
+                # 使用新的解析函数
+                is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
+                
+                if not is_at or at_user_id is None:
                     replyMsg(plugin_event, dictStrCustom['strNoTarget'])
                     return
                 
                 # 获取目标用户名称
-                target_user_id = user_ids[0]
-                dictTValue['tTargetName'] = get_user_name(target_user_id)
+                dictTValue['tTargetName'] = get_user_name(at_user_id)
                 
                 try:
                     plugin_event.set_group_admin(
                         group_id=plugin_event.data.group_id,
-                        user_id=target_user_id,
+                        user_id=at_user_id,
                         enable=enable
                     )
                     if enable:
@@ -471,17 +490,20 @@ def unity_reply(plugin_event, Proc):
                 tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['头衔','群头衔'])
                 tmp_reast_str = skipSpaceStart(tmp_reast_str)
                 
-                # 解析@用户
-                user_ids, content = parse_at_user(tmp_reast_str)
+                # 使用新的解析函数
+                is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
                 
                 # 判断是否为自己(没有@用户时默认自己)
                 target_user_id = None
-                if '自己' in tmp_reast_str or not user_ids:
+                content = None
+                
+                if '自己' in tmp_reast_str or not is_at:
                     target_user_id = plugin_event.data.user_id
                     # 提取内容(去除"自己")
                     content = tmp_reast_str.replace('自己', '').strip()
                 else:
-                    target_user_id = user_ids[0]
+                    target_user_id = at_user_id
+                    content = cleaned_message
                 
                 if not content:
                     replyMsg(plugin_event, dictStrCustom['strNoContent'])
@@ -580,15 +602,15 @@ def unity_reply(plugin_event, Proc):
                 tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['头衔','群头衔'])
                 tmp_reast_str = skipSpaceStart(tmp_reast_str)
                 
-                # 解析@用户
-                user_ids, _ = parse_at_user(tmp_reast_str)
+                # 使用新的解析函数
+                is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
                 
                 # 判断是否为自己(没有@用户时默认自己)
                 target_user_id = None
-                if '自己' in tmp_reast_str or not user_ids:
+                if '自己' in tmp_reast_str or not is_at:
                     target_user_id = plugin_event.data.user_id
                 else:
-                    target_user_id = user_ids[0]
+                    target_user_id = at_user_id
                 
                 # 获取目标用户名称并设置变量
                 dictTValue['tTargetName'] = get_user_name(target_user_id)
@@ -620,20 +642,20 @@ def unity_reply(plugin_event, Proc):
                 tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['禁言','解除禁言'])
                 tmp_reast_str = skipSpaceStart(tmp_reast_str)
                 
-                # 解析@用户
-                user_ids, _ = parse_at_user(tmp_reast_str)
-                if not user_ids:
+                # 使用新的解析函数
+                is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
+                
+                if not is_at or at_user_id is None:
                     replyMsg(plugin_event, dictStrCustom['strNoTarget'])
                     return
                 
                 # 获取目标用户名称
-                target_user_id = user_ids[0]
-                dictTValue['tTargetName'] = get_user_name(target_user_id)
+                dictTValue['tTargetName'] = get_user_name(at_user_id)
                 
                 try:
                     plugin_event.set_group_ban(
                         group_id=plugin_event.data.group_id,
-                        user_id=target_user_id,
+                        user_id=at_user_id,
                         duration=0  # duration为0表示解除禁言
                     )
                     tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strUnbanSuccess'], dictTValue)
@@ -655,29 +677,29 @@ def unity_reply(plugin_event, Proc):
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, '禁言')
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             
-            # 解析禁言时长(如果有的话)
-            ban_duration = 1800  # 默认1800秒(30分钟)
-            tmp_parts = tmp_reast_str.split()
-            if len(tmp_parts) > 0 and tmp_parts[0].isdigit():
-                ban_duration = int(tmp_parts[0])
-                # 移除时长参数
-                tmp_reast_str = tmp_reast_str[len(tmp_parts[0]):].strip()
+            # 使用新的解析函数
+            is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
             
-            # 解析@用户
-            user_ids, _ = parse_at_user(tmp_reast_str)
-            if not user_ids:
+            if not is_at or at_user_id is None:
                 replyMsg(plugin_event, dictStrCustom['strNoTarget'])
                 return
             
+            # 解析禁言时长 - 从清理后的消息中解析数字
+            ban_duration = 1800  # 默认1800秒(30分钟)
+            if cleaned_message:
+                # 提取数字
+                numbers = re.findall(r'\d+', cleaned_message)
+                if numbers:
+                    ban_duration = int(numbers[0])
+            
             # 获取目标用户名称
-            target_user_id = user_ids[0]
-            dictTValue['tTargetName'] = get_user_name(target_user_id)
+            dictTValue['tTargetName'] = get_user_name(at_user_id)
             dictTValue['tContent'] = str(ban_duration)
             
             try:
                 plugin_event.set_group_ban(
                     group_id=plugin_event.data.group_id,
-                    user_id=target_user_id,
+                    user_id=at_user_id,
                     duration=ban_duration
                 )
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strBanSuccess'], dictTValue)
@@ -699,20 +721,20 @@ def unity_reply(plugin_event, Proc):
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['踢出','踢人'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             
-            # 解析@用户
-            user_ids, _ = parse_at_user(tmp_reast_str)
-            if not user_ids:
+            # 使用新的解析函数
+            is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
+            
+            if not is_at or at_user_id is None:
                 replyMsg(plugin_event, dictStrCustom['strNoTarget'])
                 return
             
             # 获取目标用户名称
-            target_user_id = user_ids[0]
-            dictTValue['tTargetName'] = get_user_name(target_user_id)
+            dictTValue['tTargetName'] = get_user_name(at_user_id)
             
             try:
                 plugin_event.set_group_kick(
                     group_id=plugin_event.data.group_id,
-                    user_id=target_user_id
+                    user_id=at_user_id
                 )
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strKickSuccess'], dictTValue)
                 replyMsg(plugin_event, tmp_reply_str)
@@ -726,22 +748,22 @@ def unity_reply(plugin_event, Proc):
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, '点赞')
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
             
-            # 解析次数参数(如果有的话)
-            like_times = 20  # 默认20次
-            tmp_parts = tmp_reast_str.split()
-            if len(tmp_parts) > 0 and tmp_parts[0].isdigit():
-                like_times = int(tmp_parts[0])
-                # 移除次数参数
-                tmp_reast_str = tmp_reast_str[len(tmp_parts[0]):].strip()
+            # 使用新的解析函数
+            is_at, at_user_id, cleaned_message = parse_at_user(tmp_reast_str)
             
-            # 解析@用户
-            user_ids, remaining_msg = parse_at_user(tmp_reast_str)
+            # 解析次数参数 - 从清理后的消息中解析数字
+            like_times = 20  # 默认20次
+            if cleaned_message:
+                # 提取数字
+                numbers = re.findall(r'\d+', cleaned_message)
+                if numbers:
+                    like_times = int(numbers[0])
             
             # 判断是否为自己(没有@用户时默认自己)
             target_user_id = None
             is_self = False
             
-            if '自己' in tmp_reast_str or not user_ids:
+            if '自己' in tmp_reast_str or not is_at:
                 # 点赞自己,不需要权限
                 target_user_id = plugin_event.data.user_id
                 is_self = True
@@ -750,7 +772,7 @@ def unity_reply(plugin_event, Proc):
                 if not check_permission():
                     replyMsg(plugin_event, dictStrCustom['strNeedAdmin'])
                     return
-                target_user_id = user_ids[0]
+                target_user_id = at_user_id
             
             # 获取目标用户名称
             if not is_self:

@@ -39,6 +39,9 @@ dictStrCustom = {
     'strNoticeFailed': '群公告发布失败，请检查Bot权限',
     'strNoTarget': '未找到目标用户，请@目标用户',
     'strNoContent': '内容不能为空',
+    'strForGroupOnly': '此命令只能在群聊中使用',
+    'strNeedAdmin': '权限不足，需要管理员或群主权限',
+    'strAtOtherPermissionDenied': '权限不足，无法操作其他用户',
 }
 
 dictStrConst = {
@@ -81,6 +84,9 @@ dictStrCustomNote = {
     'strNoticeFailed': '【群公告】命令\n群公告发布失败时的回复',
     'strNoTarget': '未找到目标用户时的回复',
     'strNoContent': '内容为空时的回复',
+    'strForGroupOnly': '命令只能在群聊中使用时的回复',
+    'strNeedAdmin': '权限不足时的回复',
+    'strAtOtherPermissionDenied': '@他人但无权限时的回复',
 }
 
 dictHelpDocTemp = {
