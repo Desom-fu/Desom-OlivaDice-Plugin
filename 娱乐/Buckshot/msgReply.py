@@ -1012,7 +1012,7 @@ def unity_reply(plugin_event, Proc):
             if prop_name == "all":  # 如果是查询所有道具
                 # 构建所有道具的效果信息
                 all_effects = "\n".join([f"-【{prop}】：{effect}" for prop, effect in item_effects.items()])
-                send_forward_text(plugin_event, [user_id], all_effects, False, "")
+                send_forward_text(plugin_event, [user_id], all_effects, False, "", True)
                 return
             else:  # 查询指定道具
                 # 创建一个忽略大小写的映射字典

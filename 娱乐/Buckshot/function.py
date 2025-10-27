@@ -963,7 +963,7 @@ def sendMsgByEvent(plugin_event, message, target_id, target_type, host_id = None
     )
     return OlivaDiceCore.msgReply.pluginSend(plugin_event, target_type, target_id, message, host_id = host_id)
 
-def send_forward_text(plugin_event, user_ids, message, at_users=True, additional_msg=""):
+def send_forward_text(plugin_event, user_ids, message, at_users=True, additional_msg="", is_forward=False):
     """
     发送合并转发消息，如果不是QQ平台则正常发送
     :param plugin_event: 插件事件对象
@@ -972,8 +972,8 @@ def send_forward_text(plugin_event, user_ids, message, at_users=True, additional
     :param at_users: 是否@用户
     :param additional_msg: 附加消息
     """
-    # 检查平台，如果不是QQ平台则正常发送
-    if plugin_event.platform['platform'] != 'qq':
+    # 检查平台，如果不是QQ平台且不是转发则正常发送
+    if plugin_event.platform['platform'] != 'qq' and not is_forward:
         # 构建@用户的消息
         at_msg = ""
         if at_users and user_ids:
