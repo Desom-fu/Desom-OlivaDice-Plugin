@@ -115,10 +115,38 @@ def get_user_data_path(bot_hash, user_hash):
         os.makedirs(user_dir)
     return os.path.join(user_dir, f'{user_hash}.json')
 
-def load_user_data(bot_hash, user_id, platform):
-    """加载用户数据"""
+def load_user_data(bot_hash, user_id, platform, auto_init=False):
+    """加载用户数据
+    
+    Args:
+        bot_hash: bot的hash值
+        user_id: 用户ID
+        platform: 平台
+        auto_init: 如果为True且文件不存在，则自动创建并初始化用户数据文件
+    """
     user_hash = get_user_hash(user_id, platform)
     user_data_path = get_user_data_path(bot_hash, user_hash)
+    
+    # 检查文件是否存在
+    if not os.path.exists(user_data_path):
+        # 创建默认数据
+        default_data = {
+            'contribution': 0,
+            'inventory': {},
+            'collections': {}
+        }
+        
+        # 如果auto_init为True，则自动创建文件
+        if auto_init:
+            try:
+                with open(user_data_path, 'w', encoding='utf-8') as f:
+                    json.dump(default_data, f, ensure_ascii=False, indent=4)
+            except:
+                pass
+        
+        return default_data
+    
+    # 文件存在，读取数据
     try:
         with open(user_data_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -425,6 +453,9 @@ def unity_reply(plugin_event, Proc):
         if isMatchWordStart(tmp_reast_str, ['bag'], isCommand=True):
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, ['bag'])
             tmp_reast_str = skipSpaceStart(tmp_reast_str)
+            
+            # 用户第一次使用bag命令时，自动初始化用户数据文件
+            load_user_data(plugin_event.bot_info.hash, plugin_event.data.user_id, plugin_event.platform['platform'], auto_init=True)
             
             # 贡献值命令
             if isMatchWordStart(tmp_reast_str, ['贡献值'], isCommand=True):
@@ -1034,6 +1065,7 @@ def unity_reply(plugin_event, Proc):
         
             else:
                 OlivaDiceCore.msgReply.replyMsgLazyHelpByEvent(plugin_event, 'bag')
+
 def handle_blindbox(plugin_event, Proc, item_name, user_data, dictTValue, dictStrCustom, replyMsg, full_command_str):
     """处理盲盒系统"""
     # 用户输入命令映射：默认单抽
