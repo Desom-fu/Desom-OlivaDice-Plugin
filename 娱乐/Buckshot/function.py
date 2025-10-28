@@ -973,7 +973,7 @@ def send_forward_text(plugin_event, user_ids, message, at_users=True, additional
     :param additional_msg: 附加消息
     """
     # 检查平台，如果不是QQ平台且不是转发则正常发送
-    if plugin_event.platform['platform'] != 'qq' and not is_forward:
+    if plugin_event.platform['platform'] != 'qq' or not is_forward:
         # 构建@用户的消息
         at_msg = ""
         if at_users and user_ids:

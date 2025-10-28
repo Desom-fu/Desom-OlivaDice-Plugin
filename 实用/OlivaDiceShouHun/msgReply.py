@@ -808,6 +808,31 @@ def unity_reply(plugin_event, Proc):
                 # 应用大成功/大失败的奖励（净效果）
                 net_great_effect = front_great_success - front_great_fail
                 success_level += net_great_effect
+            else:
+                # 失败的情况，也需要检查大失败
+                if not flag_no_default_d20:
+                    if s_count > 1:
+                        # 多个d20的情况，检查每个d20
+                        for i, d20_val in enumerate(d20_results):
+                            if d20_val >= 20:
+                                front_great_success += 1
+                            elif d20_val <= 1:
+                                front_great_fail += 1
+                        
+                        # 如果有大失败，设为大失败
+                        if front_great_fail > front_great_success:
+                            tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_FAIL
+                        elif front_great_success > front_great_fail:
+                            # 虽然失败，但大成功更多，仍显示失败（不改变结果）
+                            pass
+                    else:
+                        # 单个d20的情况
+                        if rd_d20.resInt <= 1:
+                            tmpSkillCheckType = OlivaDiceCore.skillCheck.resultType.SKILLCHECK_GREAT_FAIL
+                            front_great_fail = 1
+                        elif rd_d20.resInt >= 20:
+                            # 虽然骰出20但失败了，仍显示失败（不改变结果）
+                            front_great_success = 1
             
             success_level += d20_challenge_bonus
             success_level = max(0, success_level)
