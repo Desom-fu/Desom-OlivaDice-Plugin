@@ -4,8 +4,16 @@ import json
 import os
 import re
 
-# 全局定义数据存储路径
-data_path = "plugin/data/SmartInterceptor"
+# 全局定义数据存储路径（基础路径）
+base_data_path = "plugin/data/SmartInterceptor"
+
+def get_data_path(bot_hash):
+    """根据bot_hash获取数据存储路径"""
+    return os.path.join(base_data_path, bot_hash)
+
+def get_old_data_path():
+    """获取旧版本的数据存储路径（用于兼容性迁移）"""
+    return base_data_path
 
 # 用法回复
 interception_used_str = '''拦截词支持三种匹配模式：
@@ -28,6 +36,19 @@ class Event(object):
     
     @classmethod
     def init(cls, plugin_event, Proc):
+        # 遍历所有bot进行初始化
+        if 'bot_info_dict' in Proc.Proc_data:
+            for bot_hash in Proc.Proc_data['bot_info_dict']:
+                cls.init_for_bot(bot_hash, Proc)
+        
+        # 兼容性迁移：如果有旧数据，迁移到新格式
+        cls.migrate_old_data(Proc)
+    
+    @classmethod
+    def init_for_bot(cls, bot_hash, Proc):
+        """为单个bot初始化数据文件"""
+        data_path = get_data_path(bot_hash)
+        
         # 确保数据目录存在
         if not os.path.exists(data_path):
             os.makedirs(data_path)
@@ -43,12 +64,12 @@ class Event(object):
         if not os.path.exists(global_words_file):
             with open(global_words_file, "w", encoding="utf-8") as f:
                 json.dump([], f, indent=4)
-            Proc.log(2, "[SmartInterceptor] 已创建全局拦截词文件")
+            Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 创建全局拦截词文件")
         
         if not os.path.exists(group_words_file):
             with open(group_words_file, "w", encoding="utf-8") as f:
                 json.dump({}, f, indent=4)
-            Proc.log(2, "[SmartInterceptor] 已创建分群拦截词文件")
+            Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 创建分群拦截词文件")
         
         if not os.path.exists(toggle_status_file):
             with open(toggle_status_file, "w", encoding="utf-8") as f:
@@ -57,7 +78,115 @@ class Event(object):
                     "global_groups": {},
                     "group_groups": {}
                 }, f, indent=4)
-            Proc.log(2, "[SmartInterceptor] 已创建拦截功能开关状态文件")
+            Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 创建拦截功能开关状态文件")
+    
+    @classmethod
+    def migrate_old_data(cls, Proc):
+        """兼容性迁移：将旧版本的数据迁移到新格式（按hash分目录）"""
+        old_data_path = get_old_data_path()
+        old_global_words_file = os.path.join(old_data_path, "global_words.json")
+        old_group_words_file = os.path.join(old_data_path, "group_words.json")
+        old_toggle_status_file = os.path.join(old_data_path, "toggle_status.json")
+        
+        # 检查是否存在旧数据文件
+        has_old_data = False
+        old_global_words = []
+        old_group_words = {}
+        old_toggle_status = None
+        
+        # 读取旧数据
+        if os.path.exists(old_global_words_file):
+            try:
+                with open(old_global_words_file, "r", encoding="utf-8") as f:
+                    old_global_words = json.load(f)
+                has_old_data = True
+            except:
+                pass
+        
+        if os.path.exists(old_group_words_file):
+            try:
+                with open(old_group_words_file, "r", encoding="utf-8") as f:
+                    old_group_words = json.load(f)
+                has_old_data = True
+            except:
+                pass
+        
+        if os.path.exists(old_toggle_status_file):
+            try:
+                with open(old_toggle_status_file, "r", encoding="utf-8") as f:
+                    old_toggle_status = json.load(f)
+                has_old_data = True
+            except:
+                pass
+        
+        # 如果有旧数据，迁移到所有bot
+        if has_old_data and 'bot_info_dict' in Proc.Proc_data:
+            for bot_hash in Proc.Proc_data['bot_info_dict']:
+                data_path = get_data_path(bot_hash)
+                global_words_file = os.path.join(data_path, "global_words.json")
+                group_words_file = os.path.join(data_path, "group_words.json")
+                toggle_status_file = os.path.join(data_path, "toggle_status.json")
+                
+                # 迁移全局拦截词（如果新文件不存在或为空）
+                if old_global_words:
+                    if not os.path.exists(global_words_file):
+                        with open(global_words_file, "w", encoding="utf-8") as f:
+                            json.dump(old_global_words, f, indent=4)
+                        Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 迁移全局拦截词")
+                    else:
+                        # 如果新文件存在，合并数据
+                        try:
+                            with open(global_words_file, "r", encoding="utf-8") as f:
+                                existing_words = json.load(f)
+                            # 合并，去重
+                            merged_words = list(set(existing_words + old_global_words))
+                            with open(global_words_file, "w", encoding="utf-8") as f:
+                                json.dump(merged_words, f, indent=4)
+                            Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 合并全局拦截词")
+                        except:
+                            pass
+                
+                # 迁移群拦截词（如果新文件不存在或为空）
+                if old_group_words:
+                    if not os.path.exists(group_words_file):
+                        with open(group_words_file, "w", encoding="utf-8") as f:
+                            json.dump(old_group_words, f, indent=4)
+                        Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 迁移群拦截词")
+                    else:
+                        # 如果新文件存在，合并数据
+                        try:
+                            with open(group_words_file, "r", encoding="utf-8") as f:
+                                existing_words = json.load(f)
+                            # 合并
+                            for group_id, words in old_group_words.items():
+                                if group_id in existing_words:
+                                    existing_words[group_id] = list(set(existing_words[group_id] + words))
+                                else:
+                                    existing_words[group_id] = words
+                            with open(group_words_file, "w", encoding="utf-8") as f:
+                                json.dump(existing_words, f, indent=4)
+                            Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 合并群拦截词")
+                        except:
+                            pass
+                
+                # 迁移开关状态（如果新文件不存在）
+                if old_toggle_status:
+                    if not os.path.exists(toggle_status_file):
+                        with open(toggle_status_file, "w", encoding="utf-8") as f:
+                            json.dump(old_toggle_status, f, indent=4)
+                        Proc.log(2, f"[SmartInterceptor] 已为 {bot_hash} 迁移拦截功能开关状态")
+            
+            # 迁移完成后，删除旧文件
+            try:
+                if os.path.exists(old_global_words_file):
+                    os.remove(old_global_words_file)
+                if os.path.exists(old_group_words_file):
+                    os.remove(old_group_words_file)
+                if os.path.exists(old_toggle_status_file):
+                    os.remove(old_toggle_status_file)
+                Proc.log(2, "[SmartInterceptor] 已删除旧数据文件")
+            except Exception as e:
+                Proc.log(4, f"[SmartInterceptor] 删除旧数据文件失败: {e}")
 
     @classmethod
     def is_dice_master(cls, plugin_event):
@@ -113,6 +242,8 @@ class Event(object):
     def handle_private_message(cls, plugin_event, Proc):
         """处理私聊消息 - 只处理全局拦截词相关命令"""
         try:
+            bot_hash = plugin_event.bot_info.hash
+            data_path = get_data_path(bot_hash)
             # 文件路径
             global_words_file = os.path.join(data_path, "global_words.json")
             
@@ -192,10 +323,10 @@ class Event(object):
                         if not cls.is_dice_master(plugin_event):
                             return
                             
-                        toggle_status = cls.get_toggle_status()
+                        toggle_status = cls.get_toggle_status(bot_hash)
                         new_status = action == cls.TOGGLE_ON
                         toggle_status["global"] = new_status
-                        cls.set_toggle_status(toggle_status)
+                        cls.set_toggle_status(toggle_status, bot_hash)
                         
                         status_str = cls.TOGGLE_ON if new_status else cls.TOGGLE_OFF
                         Proc.log(2, f"[SmartInterceptor] 骰主 {plugin_event.data.user_id} {status_str}全局拦截功能")
@@ -223,7 +354,7 @@ class Event(object):
                 
         except json.JSONDecodeError:
             Proc.log(4, "[SmartInterceptor] 配置文件损坏，正在重置")
-            cls.init(plugin_event, Proc)
+            cls.init_for_bot(plugin_event.bot_info.hash, Proc)
             plugin_event.reply("配置文件损坏，已重置为默认配置")
             
         except Exception as e:
@@ -234,6 +365,8 @@ class Event(object):
     def handle_group_message(cls, plugin_event, Proc):
         """处理群聊消息 - 处理所有命令"""
         try:
+            bot_hash = plugin_event.bot_info.hash
+            data_path = get_data_path(bot_hash)
             # 文件路径
             global_words_file = os.path.join(data_path, "global_words.json")
             group_words_file = os.path.join(data_path, "group_words.json")
@@ -245,7 +378,7 @@ class Event(object):
             with open(group_words_file, "r", encoding="utf-8") as f:
                 group_words = json.load(f)
             
-            toggle_status = cls.get_toggle_status()
+            toggle_status = cls.get_toggle_status(bot_hash)
             
             raw_msg = plugin_event.data.message.strip()
             user_id = str(plugin_event.data.user_id)
@@ -422,7 +555,7 @@ class Event(object):
                             
                         new_status = action == cls.TOGGLE_ON
                         toggle_status["global_groups"][group_id] = new_status
-                        cls.set_toggle_status(toggle_status)
+                        cls.set_toggle_status(toggle_status, bot_hash)
                         
                         status_str = cls.TOGGLE_ON if new_status else cls.TOGGLE_OFF
                         Proc.log(2, f"[SmartInterceptor] 用户 {user_id} {status_str}群 {group_id} 全局拦截开关")
@@ -440,7 +573,7 @@ class Event(object):
                             
                         new_status = action == cls.TOGGLE_ON
                         toggle_status["group_groups"][group_id] = new_status
-                        cls.set_toggle_status(toggle_status)
+                        cls.set_toggle_status(toggle_status, bot_hash)
                         
                         status_str = cls.TOGGLE_ON if new_status else cls.TOGGLE_OFF
                         Proc.log(2, f"[SmartInterceptor] 用户 {user_id} {status_str}群 {group_id} 群拦截开关")
@@ -474,7 +607,7 @@ class Event(object):
                 
         except json.JSONDecodeError:
             Proc.log(4, "[SmartInterceptor] 配置文件损坏，正在重置")
-            cls.init(plugin_event, Proc)
+            cls.init_for_bot(plugin_event.bot_info.hash, Proc)
             plugin_event.reply("配置文件损坏，已重置为默认配置")
             
         except Exception as e:
@@ -499,9 +632,15 @@ class Event(object):
             return message == pattern
 
     @classmethod
-    def get_toggle_status(cls):
+    def get_toggle_status(cls, bot_hash=None):
         """获取拦截功能开关状态"""
-        toggle_status_file = os.path.join(data_path, "toggle_status.json")
+        if bot_hash is None:
+            # 兼容旧代码，尝试从旧路径读取
+            old_data_path = get_old_data_path()
+            toggle_status_file = os.path.join(old_data_path, "toggle_status.json")
+        else:
+            data_path = get_data_path(bot_hash)
+            toggle_status_file = os.path.join(data_path, "toggle_status.json")
         try:
             with open(toggle_status_file, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -509,8 +648,14 @@ class Event(object):
             return {"global": True, "global_groups": {}, "group_groups": {}}
 
     @classmethod
-    def set_toggle_status(cls, status):
+    def set_toggle_status(cls, status, bot_hash=None):
         """设置拦截功能开关状态"""
-        toggle_status_file = os.path.join(data_path, "toggle_status.json")
+        if bot_hash is None:
+            # 兼容旧代码，尝试从旧路径写入
+            old_data_path = get_old_data_path()
+            toggle_status_file = os.path.join(old_data_path, "toggle_status.json")
+        else:
+            data_path = get_data_path(bot_hash)
+            toggle_status_file = os.path.join(data_path, "toggle_status.json")
         with open(toggle_status_file, "w", encoding="utf-8") as f:
             json.dump(status, f, indent=4)

@@ -29,8 +29,8 @@ def unity_reply(plugin_event, Proc):
         if image_files:
             selected_image = random.choice(image_files)
             image_name = os.path.basename(selected_image)
-            # 构造 CQ 码发送图片
-            cq_code = f"[CQ:image,file=跑团梗图/{image_name}]"
+            # 发送图片
+            cq_code = f"[OP:image,file=跑团梗图/{image_name}]"
             # 使用 plugin_event.reply(message) 发送 CQ 码
             plugin_event.reply(cq_code)
         else:

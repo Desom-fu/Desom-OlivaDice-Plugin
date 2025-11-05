@@ -11,12 +11,18 @@ import requests
 import os
 import re
 
+# 全局变量存储Proc对象
+globalProc = None
+
 def unity_init(plugin_event, Proc):
     # 插件初始化
-    pass
+    global globalProc
+    globalProc = Proc
 
 def data_init(plugin_event, Proc):
     # 数据初始化
+    global globalProc
+    globalProc = Proc
     OlivaDiceManager.msgCustomManager.initMsgCustom(Proc.Proc_data['bot_info_dict'])
 
 def unity_reply(plugin_event, Proc):
@@ -245,29 +251,37 @@ def unity_reply(plugin_event, Proc):
         
         # 获取账号配置(用于调用API)
         def get_account_config():
-            """从 conf/account.json 读取账号配置"""
-            config_path = os.path.join('conf', 'account.json')
+            """从Proc对象获取账号配置，根据当前bot的hash匹配对应账号，失败时返回None"""
+            global globalProc
+            if globalProc is None:
+                return None
+            
             try:
-                if not os.path.exists(config_path):
-                    return None
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    config_data = json.load(f)
-                if 'account' not in config_data or not config_data['account']:
+                # 获取当前bot的hash
+                bot_hash = plugin_event.bot_info.hash
+                
+                # 从Proc中获取bot信息
+                bot_info_dict = globalProc.Proc_data.get('bot_info_dict', {})
+                if bot_hash not in bot_info_dict:
                     return None
                 
-                current_bot_id = str(plugin_event.bot_info.id)
-                for account_config in config_data['account']:
-                    if 'id' in account_config and str(account_config['id']) == current_bot_id:
-                        if 'server' not in account_config:
-                            return None
-                        server_config = account_config['server']
-                        required_fields = ['host', 'port', 'access_token']
-                        for field in required_fields:
-                            if field not in server_config:
-                                return None
-                        return server_config
-                return None
+                bot_info = bot_info_dict[bot_hash]
+                post_info = bot_info.post_info
+                
+                # 检查必要的字段是否存在
+                if post_info.host is None or post_info.port == -1 or post_info.access_token is None:
+                    return None
+                
+                # 构建server_config字典
+                server_config = {
+                    'host': post_info.host,
+                    'port': post_info.port,
+                    'access_token': post_info.access_token
+                }
+                
+                return server_config
             except Exception as e:
+                print(f"从Proc获取账号配置失败: {e}")
                 return None
         
         # 调用API发送群公告

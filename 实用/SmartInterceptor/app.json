@@ -5,7 +5,7 @@
     "info" : "OlivOS拦截词插件，能够阻断对应的拦截词防止匹配命令和其他bot冲突（前置：OlivaDiceCore）",
     "priority" : 1000,
     "svn" : 1,
-    "version" : "1.0.0",
+    "version" : "1.0.1",
     "compatible_svn" : 100,
     "message_mode" : "olivos_string",
     "support" : [
