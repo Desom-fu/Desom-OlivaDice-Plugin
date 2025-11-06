@@ -29,6 +29,47 @@ import copy
 import re
 import random
 
+
+def parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin, need_check_permission = True):
+    """
+    解析消息中的@用户并检查权限
+    返回: is_at, at_user_id, cleaned_message_str
+    """
+    flag_is_from_master = valDict['flag_is_from_master']
+    dictTValue = valDict['dictTValue']
+    dictStrCustom = valDict['dictStrCustom']
+    tmp_reast_str_para = OlivOS.messageAPI.Message_templet('old_string', tmp_reast_str)
+    at_user_id = None
+    new_tmp_reast_str_parts = []
+    is_at = False
+    
+    for part in tmp_reast_str_para.data:
+        if isinstance(part, OlivOS.messageAPI.PARA.at):
+            at_user_id = part.data['id']
+            tmp_userName01 = OlivaDiceCore.msgReplyModel.get_user_name(plugin_event, at_user_id)
+            dictTValue['tUserName01'] = tmp_userName01
+            is_at = True
+        else:
+            if isinstance(part, OlivOS.messageAPI.PARA.text):
+                new_tmp_reast_str_parts.append(part.data['text'])
+    
+    if is_at:
+        if plugin_event.platform['platform'] in ['qqGuild']:
+            # QQ频道平台直接返回解析结果，不进行权限检查
+            cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+            return is_at, at_user_id, cleaned_message
+        # 检查发送者是否为管理员或群主
+        if not (flag_is_from_group_admin or flag_is_from_master) and need_check_permission:
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                dictStrCustom['strAtOtherPermissionDenied'], 
+                dictTValue
+            )
+            OlivaDiceCore.msgReply.replyMsg(plugin_event, tmp_reply_str)
+            return (True, None, None)  # 权限不足
+    
+    # 返回解析结果
+    cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+    return is_at, at_user_id, cleaned_message
 def replace_skills(expr_str, skill_valueTable, tmp_pcCardRule):
     """
     使用 getExpression 函数替换技能名，并将 0dX 替换为 0
@@ -329,6 +370,12 @@ def apply_bp_transformations(results, b_count, p_count):
     
     # 第二轮：执行p转换（阳转阴+劣势铜钱）
     while remaining_p > 0:
+        # 先增加一枚劣势铜钱
+        extra_coins += 1
+        coin_result = random.choice(['阴', '阳'])
+        coin_result += '(劣势)'  # 所有劣势铜钱都标记为劣势
+        new_results.append(coin_result)
+        
         # 获取当前所有阳的位置（包括新增加的劣势阳）
         yang_indices = [i for i, r in enumerate(new_results) if r.startswith('阳')]
         
@@ -349,12 +396,6 @@ def apply_bp_transformations(results, b_count, p_count):
                 else:
                     new_results[idx] = '阴(阳)'
                 transformations.append(f"位置{idx+1}: 阳→阴")
-            
-            # 增加一枚劣势铜钱
-            extra_coins += 1
-            coin_result = random.choice(['阴', '阳'])
-            coin_result += '(劣势)'  # 所有劣势铜钱都标记为劣势
-            new_results.append(coin_result)
         
         remaining_p -= actual_p
     
@@ -560,7 +601,7 @@ def unity_reply(plugin_event, Proc):
             return
         if isMatchWordStart(tmp_reast_str, 'tqav', isCommand = True):
             # tqav命令必须at对方才能进行
-            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            is_at, at_user_id, tmp_reast_str = parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin, need_check_permission = False)
             if not is_at or not at_user_id:
                 tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strTQAVNoAtError'], dictTValue)
                 replyMsg(plugin_event, tmp_reply_str)
@@ -724,7 +765,7 @@ def unity_reply(plugin_event, Proc):
             return
             
         elif isMatchWordStart(tmp_reast_str, 'tqa', isCommand = True):
-            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            is_at, at_user_id, tmp_reast_str = parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
             if is_at and not at_user_id:
                 return
             
@@ -1207,7 +1248,7 @@ def unity_reply(plugin_event, Proc):
                 replyMsg(plugin_event, tmp_reply_str)
             return
         elif isMatchWordStart(tmp_reast_str, 'tq', isCommand = True):
-            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            is_at, at_user_id, tmp_reast_str = parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
             if is_at and not at_user_id:
                 return
             tmp_reast_str = getMatchWordStartRight(tmp_reast_str, 'tq')
