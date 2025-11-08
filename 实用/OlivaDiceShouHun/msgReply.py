@@ -967,7 +967,7 @@ def unity_reply(plugin_event, Proc):
 
 def format_long_dice_rolls(detail_string):
     """
-    当每一次掷骰细节超过50个时，花括号内只显示第一个和最后一个，中间用+...+来表示。
+    当每一次掷骰细节超过100个时，花括号内只显示第一个和最后一个，中间用+...+来表示。
     """
     # 确保处理的是字符串类型
     if not isinstance(detail_string, str):
@@ -977,7 +977,7 @@ def format_long_dice_rolls(detail_string):
         # 获取花括号内的完整内容，例如 "2+1+1+..."
         content = match.group(1)
         rolls = content.split('+')
-        if len(rolls) > 50:
+        if len(rolls) > 100:
             return f"{{{rolls[0]}+...+{rolls[-1]}}}"
         else:
             return match.group(0)
