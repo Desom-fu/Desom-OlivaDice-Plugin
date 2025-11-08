@@ -30,7 +30,7 @@ def unity_reply(plugin_event, Proc):
             selected_image = random.choice(image_files)
             image_name = os.path.basename(selected_image)
             # 构造 CQ 码发送图片
-            cq_code = f"[CQ:image,file=table/{image_name}]"
+            cq_code = f"[OP:image,file=table/{image_name}]"
             # 使用 plugin_event.reply(message) 发送 CQ 码
             plugin_event.reply(cq_code)
         else:
