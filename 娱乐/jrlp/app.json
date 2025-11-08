@@ -6,7 +6,7 @@
     "info" : "今日老婆插件",
     "version" : "1.0.0",
     "svn" : 1,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

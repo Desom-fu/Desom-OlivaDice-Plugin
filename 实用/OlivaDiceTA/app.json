@@ -6,7 +6,7 @@
     "info" : "三角机构骰点插件",
     "version" : "1.0.3",
     "svn" : 3,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

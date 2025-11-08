@@ -6,7 +6,7 @@
     "info" : "本模块为OlivaDice的狩魂者模块，提供了狩魂者相关指令。",
     "version" : "1.6.1",
     "svn" : 35,
-    "compatible_svn" : 101,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

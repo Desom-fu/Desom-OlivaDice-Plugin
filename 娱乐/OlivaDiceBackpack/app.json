@@ -6,7 +6,7 @@
     "info" : "提供背包系统功能，包括贡献值管理、物品管理、商店购买、道具使用等功能。具体通过[.help 背包]查看",
     "version" : "1.0.0",
     "svn" : 1,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

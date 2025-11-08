@@ -6,7 +6,7 @@
     "info" : "这里是插件模板的描述信息。若需要修改插件NameSpace，请使用VSCode或其他软件全局替换将YourPluginName替换为你的插件名称。插件优先级建议小于20000，这样bot off后at bot才有回复，并且正常bot off可关闭。",
     "version" : "1.0.0",
     "svn" : 1,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

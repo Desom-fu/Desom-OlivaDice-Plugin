@@ -6,7 +6,7 @@
     "info" : "喵影奇谋插件，cats指令",
     "version" : "1.0.7",
     "svn" : 2,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {

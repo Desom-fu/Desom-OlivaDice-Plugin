@@ -6,7 +6,7 @@
     "info" : "自动回应表情",
     "version" : "1.0.1",
     "svn" : 1,
-    "compatible_svn" : 100,
+    "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [
         {
