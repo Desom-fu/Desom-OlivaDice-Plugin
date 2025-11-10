@@ -387,15 +387,15 @@ def determine_ta_result(three_count):
     else:
         return 'success'
 
-def calculate_chaos_generation(three_count_original, three_count_final, burnout_count, penalty_count, is_true_triple_ascension, is_triangle_stability):
+def calculate_chaos_generation(three_count_original, three_count_before_burnout, burnout_count, penalty_count, is_true_triple_ascension, is_triangle_stability):
     """
     计算混沌值生成
     three_count_original: 初始骰子的3的个数
-    three_count_final: 改写后骰子的3的个数
-    burnout_count: 燃尽次数
+    three_count_before_burnout: 燃尽前（b/p修改后）骰子的3的个数
+    burnout_count: 燃尽次数（无论是否燃掉3，每个燃尽都加1点）
     penalty_count: p参数次数
     is_true_triple_ascension: 是否为真正的三重升华（初始骰子就有三个3）
-    is_triangle_stability: 是否为三角稳定（改写后刚好是3个3但初始不是）
+    is_triangle_stability: 是否为三角稳定（最终刚好是3个3但初始不是）
     """
     # 三重升华不产生混沌值
     if is_true_triple_ascension:
@@ -405,8 +405,9 @@ def calculate_chaos_generation(three_count_original, three_count_final, burnout_
     if is_triangle_stability:
         return 0
     
-    # 其他情况：混沌值 = 6 - 改写后3的个数 + 燃尽次数 + p参数次数
-    chaos_value = 6 - three_count_final + burnout_count + penalty_count
+    # 其他情况：混沌值 = 6 - 燃尽前3的个数 + 燃尽次数 + p参数次数
+    # 注意：燃尽次数无论是否真的燃掉3，每个燃尽都加1点
+    chaos_value = 6 - three_count_before_burnout + burnout_count + penalty_count
     return max(0, chaos_value)
 
 def unity_init(plugin_event, Proc):
@@ -748,9 +749,16 @@ def unity_reply(plugin_event, Proc):
                         bonus_dice, penalty_dice, tmp_template_customDefault
                     )
                     
+                    # three_count_raw 是 b/p 修改后、燃尽前的3的个数
+                    three_count_before_burnout = three_count_raw
+                    
                     # 应用燃尽
                     final_dice, burned_count, burnout_chaos = apply_burnout(modified_dice, total_burnout)
                     three_count_final = sum(1 for val in final_dice if val == 3)
+                    
+                    # 燃尽次数：无论是否真的燃掉3，每个燃尽都加1点混沌值
+                    # 所以使用 total_burnout 而不是 burned_count
+                    actual_burnout_count = total_burnout
                     
                     # 更新骰子显示
                     # 检查是否有任何修改（b/p/燃尽）
@@ -792,12 +800,13 @@ def unity_reply(plugin_event, Proc):
                     else:
                         result_type = determine_ta_result(three_count_final)  # 其他情况按正常规则
                     
-                    # 计算混沌值变化（不再额外添加p和燃尽混沌值，已包含在公式中）
+                    # 计算混沌值变化
+                    # 使用燃尽前的3的个数来计算混沌值，燃尽次数无论是否燃掉3都加1点
                     chaos_generation = calculate_chaos_generation(
                         three_count_original,
-                        three_count_final,  # 改写后的3的个数
-                        burned_count,  # 燃尽次数
-                        penalty_dice,  # p参数次数（不是penalty_chaos）
+                        three_count_before_burnout,  # 燃尽前（b/p修改后）的3的个数
+                        actual_burnout_count,  # 燃尽次数（无论是否燃掉3，每个燃尽都加1点）
+                        penalty_dice,  # p参数次数
                         is_true_triple_ascension, 
                         is_triangle_stability
                     )
@@ -882,9 +891,16 @@ def unity_reply(plugin_event, Proc):
                             bonus_dice, penalty_dice, tmp_template_customDefault
                         )
                         
+                        # three_count_raw 是 b/p 修改后、燃尽前的3的个数
+                        three_count_before_burnout = three_count_raw
+                        
                         # 应用燃尽
                         final_dice, burned_count, burnout_chaos = apply_burnout(modified_dice, total_burnout)
                         three_count_final = sum(1 for val in final_dice if val == 3)
+                        
+                        # 燃尽次数：无论是否真的燃掉3，每个燃尽都加1点混沌值
+                        # 所以使用 total_burnout 而不是 burned_count
+                        actual_burnout_count = total_burnout
                         
                         # 更新骰子显示
                         # 检查是否有任何修改（b/p/燃尽）
@@ -926,12 +942,13 @@ def unity_reply(plugin_event, Proc):
                         else:
                             result_type = determine_ta_result(three_count_final)  # 其他情况按正常规则
                         
-                        # 计算混沌值变化（不再额外添加p和燃尽混沌值，已包含在公式中）
+                        # 计算混沌值变化
+                        # 使用燃尽前的3的个数来计算混沌值，燃尽次数无论是否燃掉3都加1点
                         chaos_generation = calculate_chaos_generation(
                             three_count_original,
-                            three_count_final,  # 改写后的3的个数
-                            burned_count,  # 燃尽次数
-                            penalty_dice,  # p参数次数（不是penalty_chaos）
+                            three_count_before_burnout,  # 燃尽前（b/p修改后）的3的个数
+                            actual_burnout_count,  # 燃尽次数（无论是否燃掉3，每个燃尽都加1点）
+                            penalty_dice,  # p参数次数
                             is_true_triple_ascension, 
                             is_triangle_stability
                         )
