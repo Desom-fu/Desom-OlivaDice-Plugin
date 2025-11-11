@@ -284,8 +284,44 @@ def saveData(file_path, data):
     except:
         return False
 
+def createDefaultPcCard(user_id, platform, user_name, tmp_hagID=None):
+    """创建默认的匕首之心人物卡"""
+    try:
+        # 获取pcHash
+        tmp_pcHash = OlivaDiceCore.pcCard.getPcHash(user_id, platform)
+        
+        # 创建人物卡名称
+        pc_name = f"{user_name}"
+        
+        # 设置希望上限（这会自动创建人物卡）
+        OlivaDiceCore.pcCard.pcCardDataSetBySkillName(
+            pcHash=tmp_pcHash,
+            skillName='希望上限',
+            skillValue=6,
+            pcCardName=pc_name,
+            hagId=tmp_hagID
+        )
+        
+        # 设置模板
+        OlivaDiceCore.pcCard.pcCardDataSetTemplateKey(
+            tmp_pcHash,
+            pc_name,
+            'dh'
+        )
+        
+        # 切换到新建的人物卡
+        OlivaDiceCore.pcCard.pcCardDataSetSelectionKeyLock(
+            tmp_pcHash,
+            pc_name,
+            tmp_hagID
+        )
+        
+        return pc_name
+    except:
+        return None
+
 def getPcCardData(plugin_event, user_id=None, platform=None):
-    """获取人物卡数据，使用OlivaDiceCore标准函数"""
+    """获取人物卡数据，使用OlivaDiceCore标准函数。如果没有人物卡则自动创建"""
     if user_id is None:
         user_id = plugin_event.data.user_id
     if platform is None:
@@ -310,8 +346,13 @@ def getPcCardData(plugin_event, user_id=None, platform=None):
         tmp_hagID
     )
     
+    # 如果没有人物卡，自动创建一个
     if tmp_pc_name is None:
-        return None, None, None, tmp_hagID
+        user_name = plugin_event.data.sender['name'] if hasattr(plugin_event.data, 'sender') else str(user_id)
+        tmp_pc_name = createDefaultPcCard(user_id, platform, user_name, tmp_hagID)
+        
+        if tmp_pc_name is None:
+            return None, None, None, tmp_hagID
     
     # 使用OlivaDiceCore标准函数获取人物卡数据
     tmp_pc_data = OlivaDiceCore.pcCard.pcCardDataGetByPcName(
@@ -399,10 +440,10 @@ def processDDCommand(plugin_event, Proc, command_str, dictTValue, dictStrCustom,
         user_id = plugin_event.data.user_id
         tmp_pc_platform = plugin_event.platform['platform']
         
-        # 获取人物卡数据
+        # 获取人物卡数据（如果没有会自动创建）
         pc_data, tmp_pc_id, tmp_pc_name, tmp_hagID = getPcCardData(plugin_event)
-        if pc_data is None:
-            dictTValue['tResult'] = '未找到人物卡'
+        if pc_data is None or tmp_pc_id is None or tmp_pc_name is None:
+            dictTValue['tResult'] = '无法创建或获取人物卡'
             return OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strDDError'], dictTValue)
         
         dictTValue['tName'] = tmp_pc_name
@@ -646,34 +687,43 @@ def processDDCommand(plugin_event, Proc, command_str, dictTValue, dictStrCustom,
             if current_hope is not None and hope_change != 0:
                 new_hope = current_hope + hope_change
                 
-                # 限制范围
-                if hope_max is not None:
-                    new_hope = min(new_hope, hope_max)
-                new_hope = max(0, new_hope)
-                
-                # 构建希望点变化文本（只显示增加部分，消耗已经在前面显示过了）
-                hope_detail_parts = []
-                if hope_change > 0:
-                    hope_detail_parts.append(f"+{hope_change}({'关键成功' if hope_roll == fear_roll else '希望结果'})")
-                
-                hope_detail = ''.join(hope_detail_parts) if hope_detail_parts else ""
-                
-                dictTValue['tNew'] = str(new_hope)
-                dictTValue['tOld'] = str(current_hope)
-                dictTValue['tDetail'] = hope_detail
-                
-                if hope_max is not None:
+                # 检查是否已达上限
+                if hope_max is not None and current_hope >= hope_max and hope_change > 0:
+                    # 希望点已达上限,不再增加
+                    dictTValue['tOld'] = str(current_hope)
                     dictTValue['tMax'] = str(hope_max)
                     dictTValue['tHopeChange'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
-                        dictStrCustom['strHopeChange'], dictTValue
+                        dictStrCustom['strHopeAlreadyMax'], dictTValue
                     )
                 else:
-                    dictTValue['tHopeChange'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
-                        dictStrCustom['strHopeChangeNoMax'], dictTValue
-                    )
-                
-                # 使用标准函数更新人物卡
-                setSkillValue(tmp_pc_id, '希望', new_hope, tmp_pc_name, tmp_hagID)
+                    # 限制范围
+                    if hope_max is not None:
+                        new_hope = min(new_hope, hope_max)
+                    new_hope = max(0, new_hope)
+                    
+                    # 构建希望点变化文本（只显示增加部分，消耗已经在前面显示过了）
+                    hope_detail_parts = []
+                    if hope_change > 0:
+                        hope_detail_parts.append(f"+{hope_change}({'关键成功' if hope_roll == fear_roll else '希望结果'})")
+                    
+                    hope_detail = ''.join(hope_detail_parts) if hope_detail_parts else ""
+                    
+                    dictTValue['tNew'] = str(new_hope)
+                    dictTValue['tOld'] = str(current_hope)
+                    dictTValue['tDetail'] = hope_detail
+                    
+                    if hope_max is not None:
+                        dictTValue['tMax'] = str(hope_max)
+                        dictTValue['tHopeChange'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strHopeChange'], dictTValue
+                        )
+                    else:
+                        dictTValue['tHopeChange'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                            dictStrCustom['strHopeChangeNoMax'], dictTValue
+                        )
+                    
+                    # 使用标准函数更新人物卡
+                    setSkillValue(tmp_pc_id, '希望', new_hope, tmp_pc_name, tmp_hagID)
             
             if pressure_change != 0 and current_pressure is not None:
                 new_pressure = current_pressure + pressure_change
@@ -703,7 +753,7 @@ def processDDCommand(plugin_event, Proc, command_str, dictTValue, dictStrCustom,
                 # 使用标准函数更新人物卡
                 setSkillValue(tmp_pc_id, '压力', new_pressure, tmp_pc_name, tmp_hagID)
             
-            # 更新名片 - 使用用户ID而不是pcHash
+            # 更新名片
             OlivaDiceCore.msgReply.trigger_auto_sn_update(plugin_event, user_id, tmp_pc_platform, tmp_hagID, dictTValue)
         
         # 设置最终结果文本
@@ -717,6 +767,16 @@ def processDDCommand(plugin_event, Proc, command_str, dictTValue, dictStrCustom,
             )
         else:
             dictTValue['tChallengeReason'] = ''
+        
+        # 设置难度显示
+        if 'difficulty' in result:
+            dictTValue['tDifficulty'] = str(result['difficulty'])
+            dictTValue['tDifficultyDisplay'] = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                dictStrCustom['strDifficultyDisplay'], dictTValue
+            )
+        else:
+            dictTValue['tDifficulty'] = ''
+            dictTValue['tDifficultyDisplay'] = ''
         
         # 处理帮助者信息
         helper_messages = []
@@ -763,6 +823,9 @@ def processDDCommand(plugin_event, Proc, command_str, dictTValue, dictStrCustom,
 
 def parseDDCommand(command_str, tmp_pc_id, tmp_hagID, plugin_event, Proc, dictTValue):
     """解析DD命令参数"""
+    # HTML实体解码 - 支持 &#91; -> [ 和 &#93; -> ]
+    command_str = command_str.replace('&#91;', '[').replace('&#93;', ']')
+    
     result = {
         'hope_dice_faces': 12,
         'fear_dice_faces': 12,
@@ -872,14 +935,15 @@ def parseDDCommand(command_str, tmp_pc_id, tmp_hagID, plugin_event, Proc, dictTV
     
     # 提取所有修饰符 - 使用更精确的模式
     # 优先匹配无符号属性(后面跟+的)，给它们加上+号
-    leadingattr_pattern = r'(?:^|\s)([^\s\+\-#]+)(?=\+)'
+    leadingattr_pattern = r'(?:^|\s)([^\s\+\-#\[]+)(?=\+)'
     leading_attrs = re.findall(leadingattr_pattern, command_str)
     for attr in leading_attrs:
         # 替换为带+的版本
         command_str = re.sub(r'(?:^|\s)' + re.escape(attr) + r'(?=\+)', ' +' + attr, command_str, count=1)
     
     # 提取所有修饰符
-    # #\d+ - 难度值
+    # #\d+ - 难度值(#格式)
+    # \[\d+\] - 难度值([N]格式)
     # [\+\-]\d+d\d+ - 带符号的骰子表达式(如+2d6)
     # (?:^|\s)\d+d\d+ - 开头的骰子表达式(如2d6)
     # [\+\-]\d*(?:优势?|劣势?|adv|dis)(?![\u4e00-\u9fa5\w])\d* - 带符号的优势/劣势
@@ -887,8 +951,8 @@ def parseDDCommand(command_str, tmp_pc_id, tmp_hagID, plugin_event, Proc, dictTV
     # [\+\-]\d*(?:经历|exp)\d* - 带符号的经历
     # (?:^|\s)\d*(?:经历|exp)\d* - 开头的经历(如"经历 快速行动")
     # [\+\-]\d+ - 带符号的常量(如+3,-2)
-    # [\+\-][^\s\+\-#]+ - 带符号的属性名
-    modifier_pattern = r'#\d+|[\+\-]\d+d\d+|(?:^|\s)\d+d\d+|[\+\-]\d*(?:优势?|劣势?|adv|dis)(?![\u4e00-\u9fa5\w])\d*|(?:^|\s)\d*(?:优势?|劣势?|adv|dis)(?![\u4e00-\u9fa5\w])\d*|[\+\-]\d*(?:经历|exp)\d*|(?:^|\s)\d*(?:经历|exp)\d*|[\+\-]\d+|[\+\-][^\s\+\-#]+'
+    # [\+\-][^\s\+\-#\[]+ - 带符号的属性名
+    modifier_pattern = r'#\d+|\[\d+\]|[\+\-]\d+d\d+|(?:^|\s)\d+d\d+|[\+\-]\d*(?:优势?|劣势?|adv|dis)(?![\u4e00-\u9fa5\w])\d*|(?:^|\s)\d*(?:优势?|劣势?|adv|dis)(?![\u4e00-\u9fa5\w])\d*|[\+\-]\d*(?:经历|exp)\d*|(?:^|\s)\d*(?:经历|exp)\d*|[\+\-]\d+|[\+\-][^\s\+\-#\[]+'
     
     modifiers_found = re.findall(modifier_pattern, command_str, re.I)
     
@@ -905,10 +969,16 @@ def parseDDCommand(command_str, tmp_pc_id, tmp_hagID, plugin_event, Proc, dictTV
     
     # 解析修饰符
     for part in modifier_parts:
-        # 提取难度
+        # 提取难度 - 支持 #10 和 [10] 两种格式
         if part.startswith('#'):
             try:
                 result['difficulty'] = int(part[1:])
+            except:
+                pass
+            continue
+        elif part.startswith('[') and part.endswith(']'):
+            try:
+                result['difficulty'] = int(part[1:-1])
             except:
                 pass
             continue

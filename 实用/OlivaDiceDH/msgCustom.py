@@ -11,8 +11,9 @@ dictStrCustomDict = {}
 
 dictStrCustom = {
     # .dd 命令相关
-    'strDDResult': '[{tName}]{tChallengeReason}进行二元骰检定\n希望骰: {tHopeDice} 恐惧骰: {tFearDice}\n{tModifiersDetail}{tHopeConsume}{tHopeWarning}总点数: {tTotalDisplay}\n{tHelperInfo}{tHopeChange}{tGMFearChange}{tPressureChange}{tFinalResultText}',
+    'strDDResult': '[{tName}]{tChallengeReason}进行二元骰检定{tDifficultyDisplay}\n希望骰: {tHopeDice} 恐惧骰: {tFearDice}\n{tModifiersDetail}{tHopeConsume}{tHopeWarning}总点数: {tTotalDisplay}\n{tHelperInfo}{tHopeChange}{tGMFearChange}{tPressureChange}{tFinalResultText}',
     'strChallengeReason': '因为[{tReason}]',
+    'strDifficultyDisplay': '，难度: {tDifficulty}',
     'strDDError': '二元骰检定错误: {tResult}\n请通过.help dd查看正确检定格式',
     
     # 检定结果文本
@@ -26,6 +27,7 @@ dictStrCustom = {
     'strHopeWarning': '[警告] 希望不足,跳过修饰符: {tSkipped}\n',
     'strHopeChange': '希望点: {tNew} ({tNew}/{tMax}) = {tOld}{tDetail}\n',
     'strHopeChangeNoMax': '希望点: {tNew} = {tOld}{tDetail}\n',
+    'strHopeAlreadyMax': '希望点: {tOld} ({tOld}/{tMax})(已达上限)\n',
     'strPressureChange': '压力: {tNew} ({tNew}/{tMax}) = {tOld}{tChange}\n',
     'strPressureChangeNoMax': '压力: {tNew} = {tOld}{tChange}\n',
     'strPressureAlreadyZero': '压力已为0\n',
@@ -36,7 +38,7 @@ dictStrCustom = {
     'strHelperFailNoHope': '[{tHelperName}]无法帮助: 希望点不足\n',
     
     # .ddr 命令相关
-    'strDDRResult': '[{tName}]{tChallengeReason}进行反应二元骰检定\n希望骰: {tHopeDice} 恐惧骰: {tFearDice}\n{tModifiersDetail}{tHopeConsume}{tHopeWarning}总点数: {tTotalDisplay}\n{tHelperInfo}{tFinalResultText}',
+    'strDDRResult': '[{tName}]{tChallengeReason}进行反应二元骰检定{tDifficultyDisplay}\n希望骰: {tHopeDice} 恐惧骰: {tFearDice}\n{tModifiersDetail}{tHopeConsume}{tHopeWarning}总点数: {tTotalDisplay}\n{tHelperInfo}{tFinalResultText}',
     
     # GM恐惧点变化
     'strGMFearIncrease': '[{tGMName}]的恐惧点: {tGMFearNew}({tGMFearDisplay})={tGMFearOld}+1(恐惧结果)\n',
@@ -84,6 +86,8 @@ dictTValue = {
     'tFearDice': '0',
     'tModifiersDetail': '',
     'tTotalDisplay': '',
+    'tDifficulty': '',
+    'tDifficultyDisplay': '',
     'tHopeChange': '',
     'tGMFearChange': '',
     'tPressureChange': '',
@@ -121,6 +125,7 @@ dictTValue = {
 dictStrCustomNote = {
     'strDDResult': '【.dd】指令\n二元骰检定结果',
     'strDDError': '【.dd】指令\n检定错误提示',
+    'strDifficultyDisplay': '【.dd/.ddr】指令\n难度显示',
     'strHopeResult': '【.dd】指令\n希望结果文本',
     'strFearResult': '【.dd】指令\n恐惧结果文本',
     'strHelperSuccess': '【.dd】指令\n帮助成功提示',
@@ -156,6 +161,7 @@ dictStrCustomNote = {
     'strHopeWarning': '【.dd】指令\n希望不足警告',
     'strHopeChange': '【.dd】指令\n希望变化显示',
     'strHopeChangeNoMax': '【.dd】指令\n希望变化显示(无上限)',
+    'strHopeAlreadyMax': '【.dd】指令\n希望已达上限提示',
     'strPressureChange': '【.dd】指令\n压力变化显示',
     'strPressureChangeNoMax': '【.dd】指令\n压力变化显示(无上限)',
     'strPressureAlreadyZero': '【.dd】指令\n压力已为0提示',
@@ -192,8 +198,8 @@ dictHelpDocTemp = {
   • ±[N]劣势/±[N]dis：劣势骰（投N个d6取最低，取负）
   • ±[N]dM：额外骰子
   • ±N：常量修饰符
-  • @玩家名：玩家帮助（消耗帮助者1点希望，最多5人）
-  • #[N]：设定难度
+  • @玩家名：玩家帮助增加优势骰（消耗帮助者1点希望，最多5人）
+  • #[N] 或 [N]：设定难度
 
 检定结果：
 - 希望骰 = 恐惧骰：大成功（希望+1，压力-1）
@@ -205,7 +211,7 @@ dictHelpDocTemp = {
 示例：
 .dd +敏捷 推门
 .dd 12/20 +力量+优势 #15
-.dd +锻造-劣势 @Alice 修理武器''',
+.dd +锻造-劣势 @Alice [12] 修理武器''',
 
     'ddr': '''【反应二元骰检定】
 .ddr [n/m] [修饰符...] [原因]
