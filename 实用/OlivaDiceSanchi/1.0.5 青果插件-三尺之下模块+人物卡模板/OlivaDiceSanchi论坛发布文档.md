@@ -2,7 +2,7 @@
 
 - **名称**​：三尺之下模块
 - ​**作者**​：Desom-fu
-- ​**版本**​：1.0.2
+- ​**版本**​：1.0.4
 - ​**兼容版本**​：理论兼容所有版本，但仅在最新版本测试过
 - ​**平台**​：理论支持全平台（仅在 QQ 部署测试过）
 - ​**操作系统**​：理论支持全系统（仅在 Windows Server 2019 上部署过）
@@ -13,20 +13,9 @@
 
 ## 注意事项
 
-- 建议使用最新构建版`OlivaDiceCore`以获得最佳体验
-- 下载地址：https://github.com/OlivOS-Team/OlivaDiceCore/actions
+- 建议使用最新构建版`OlivaDice`以获得最佳体验
 - （记得解压！）
-[upl-file uuid=7143eb36-5a08-47b7-b510-05b44967117e size=200kB]olivadicecore.zip[/upl-file]
-
-- 建议使用最新构建版`OlivaDiceNativeGUI`以获得最佳体验
-- 下载地址：https://github.com/Desom-fu/OlivaDiceNativeGUI/actions
-- （记得解压！）
-[upl-file uuid=cd14744e-603d-4bcc-ae7d-4565fcb876a0 size=237kB]olivadicenativegui.zip[/upl-file]
-
-- （可选）建议使用最新构建版`OlivaDiceMaster`以获得最佳体验
-- 下载地址：https://github.com/Desom-fu/OlivaDiceMaster/actions
-- （记得解压！）
-[upl-file uuid=b81352c8-997f-49e5-8f91-abaa2c3343ec size=31kB]olivadicemaster.zip[/upl-file]
+[upl-file uuid=57540338-db2f-465e-92e6-bfaab255cccd size=665kB]ovo-all.zip[/upl-file]
 
 - 下载完毕后建议打开`OlivaDice 设置面板`的自定义回复，在回复词中的`配置恢复模块`里面新增一行`OlivaDiceSanchi`（注意大小写要完全一致!）
 
@@ -35,14 +24,28 @@
 ## 下载
 
 - ###### ​**插件包（记得解压！）** ​:
-[upl-file uuid=f05eb64b-70f5-4440-872a-740057991237 size=25kB]olivadicesanchi.zip[/upl-file]
+[upl-file uuid=8df88351-d391-4e65-8e20-bd3f5596743f size=29kB]olivadicesanchi.zip[/upl-file]
 
 - ###### **三尺之下青果专用人物卡模板（解压！）** :
-[upl-file uuid=24dc3c8a-458c-401d-b8a5-d782cf3728c8 size=2kB]sanchi.zip[/upl-file]
+[upl-file uuid=2ee5a623-1d8c-4d3a-a9ad-83712e9bedca size=2kB]sanchi.zip[/upl-file]
 
 ---
 
 ## 更新日志
+## 2025.11.6 v1.0.4更新：
+- 修复tqav无法使用的bug
+- 修复劣势骰有时没有添加硬币的bug
+- ovo核心插件推进至最新构建版
+
+## 2025.10.15 人物卡模板更新
+- 如题
+
+## 2025.10.13 v1.0.3更新：
+- 修复一些掷骰bug，推进到最新构建版olivadicecore
+
+## 2025.10.3 更新：
+- 优化人物卡模板
+
 ## 2025.9.26 v1.0.2 更新：
 - 上传最新构建的dice和gui
 - 新增`.投签`功能

@@ -1,11 +1,11 @@
 {
-    "name" : "OlivaDiceTA三角机构插件",
+    "name" : "OlivaDice匕首之心插件",
     "author" : "Desom-fu",
-    "namespace" : "OlivaDiceTA",
+    "namespace" : "OlivaDiceDH",
     "message_mode" : "old_string",
-    "info" : "三角机构骰点插件",
-    "version" : "1.0.5",
-    "svn" : 6,
+    "info" : "这里是OlivaDice的匕首之心模块，实现了匕首之心规则的功能。",
+    "version" : "1.0.0",
+    "svn" : 1,
     "compatible_svn" : 190,
     "priority" : 19990,
     "support" : [

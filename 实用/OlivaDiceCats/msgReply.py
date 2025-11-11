@@ -11,6 +11,21 @@ import copy
 import re
 import random
 
+def to_half_width(res):
+    """
+    将字符串中的全角符号转换为半角符号
+    """
+    result = []
+    for char in res:
+        code = ord(char)
+        # 全角空格
+        if code == 0x3000:
+            code = 0x0020
+        # 全角字符（除空格外）
+        elif 0xFF01 <= code <= 0xFF5E:
+            code -= 0xFEE0
+        result.append(chr(code))
+    return ''.join(result)
 def get_difficulty_level(difficulty_value):
     """
     根据难度值返回对应的难度等级文本
@@ -488,7 +503,6 @@ def unity_reply(plugin_event, Proc):
     skipSpaceStart = OlivaDiceCore.msgReply.skipSpaceStart
     skipToRight = OlivaDiceCore.msgReply.skipToRight
     msgIsCommand = OlivaDiceCore.msgReply.msgIsCommand
-    to_half_width = OlivaDiceCore.msgReply.to_half_width
 
     tmp_at_str = OlivOS.messageAPI.PARA.at(plugin_event.base_info['self_id']).CQ()
     tmp_id_str = str(plugin_event.base_info['self_id'])

@@ -29,6 +29,7 @@
  * `OlivaDiceCats` -- 喵影奇谋插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/847
  * `OlivaDiceTA` -- 三角机构插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/849-triangle-agency`
  * `OlivaDiceSanchi` -- 三尺之下插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/850
+ * `OlivaDiceDH` -- 匕首之心插件，包含人物卡模板。论坛发布地址：https://forum.olivos.run/d/871-daggerheart`
  * `OlivaDiceSortCOC` -- 排序制卡结果并合并转发，便于快速找到最高总属性的结果。论坛发布地址：https://forum.olivos.run/d/836-olivadicesortcoc
  * `SmartInterceptor` -- 拦截词系统，包含三种拦截方式。论坛发布地址：https://forum.olivos.run/d/707-smartinterceptor
  * `messageRecall` -- 撤回消息插件。论坛发布地址：https://forum.olivos.run/d/860

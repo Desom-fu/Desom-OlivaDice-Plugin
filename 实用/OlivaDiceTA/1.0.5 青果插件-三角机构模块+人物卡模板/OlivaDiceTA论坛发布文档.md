@@ -2,7 +2,7 @@
 
 - **名称**​：三角机构模块
 - ​**作者**​：Desom-fu
-- ​**版本**​：1.0.0
+- ​**版本**​：1.0.4
 - ​**兼容版本**​：理论兼容所有版本，但仅在最新版本测试过
 - ​**平台**​：理论支持全平台（仅在 QQ 部署测试过）
 - ​**操作系统**​：理论支持全系统（仅在 Windows Server 2019 上部署过）
@@ -13,20 +13,9 @@
 
 ## 注意事项
 
-- 建议使用最新构建版`OlivaDiceCore`以获得最佳体验
-- 下载地址：https://github.com/OlivOS-Team/OlivaDiceCore/actions
+- 建议使用最新构建版`OlivaDice`以获得最佳体验
 - （记得解压！）
-[upl-file uuid=71a33eee-928e-4e55-a52e-ca1118628e4d size=197kB]olivadicecore.zip[/upl-file]
-
-- 建议使用最新构建版`OlivaDiceNativeGUI`以获得最佳体验
-- 下载地址：https://github.com/Desom-fu/OlivaDiceNativeGUI/actions
-- （记得解压！）
-[upl-file uuid=7e860b49-2b94-427f-adc0-576df28df16f size=237kB]olivadicenativegui.zip[/upl-file]
-
-- （可选）建议使用最新构建版`OlivaDiceMaster`以获得最佳体验
-- 下载地址：https://github.com/Desom-fu/OlivaDiceMaster/actions
-- （记得解压！）
-[upl-file uuid=fe737573-ed31-499f-8830-9aeaed227877 size=31kB]olivadicemaster.zip[/upl-file]
+[upl-file uuid=78e6d3a4-12e7-48f5-b012-578b3411d284 size=669kB]ovo-all.zip[/upl-file]
 
 - 下载完毕后建议打开`OlivaDice 设置面板`的自定义回复，在回复词中的`配置恢复模块`里面新增一行`OlivaDiceTA`（注意大小写要完全一致!）
 
@@ -35,7 +24,7 @@
 ## 下载
 
 - ###### ​**插件包（记得解压！）** ​:
-[upl-file uuid=b0cea7f3-b102-402b-b2de-c801fca065cc size=13kB]olivadiceta.zip[/upl-file]
+[upl-file uuid=f4032bf1-f12c-4d42-8702-d387fbef5bf4 size=14kB]olivadiceta.zip[/upl-file]
 
 - ###### **三角机构青果专用人物卡模板（解压！）** :
 [upl-file uuid=b9009e05-b07c-4f61-8441-02f871edba36 size=828B]ta.zip[/upl-file]
@@ -43,6 +32,18 @@
 ---
 
 ## 更新日志
+## 2025.11.10 v1.0.4
+- 推进至最新构建版OlivaDice
+- 修复燃尽计算相关的bug
+
+## 2025.10.13 v1.0.3更新：
+- 修复一些掷骰bug，推进到最新构建版olivadicecore
+
+## 2025.9.22 v1.0.2 更新：
+- 向上兼容暂未更新的新版OlivOS-0.11.66(186)-玄铁古剑及以上的版本，向上兼容at回复，若不更新这个版本暂时可以无视，不过建议更新
+
+## 2025.9.19 v1.0.1更新：
+- 优化自定义回复默认项和显示项
 
 ## 2025.9.18 v1.0.0发布：
 - 三角机构插件发布
