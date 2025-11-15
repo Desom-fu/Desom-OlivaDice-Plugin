@@ -487,18 +487,21 @@ def unity_reply(plugin_event, Proc):
             if front_expr:
                 # 处理表达式中的 Xd20（只有在没有s参数且没有x参数时才处理）
                 if s_count == 1 and not is_x:
-                    # 1. 只匹配 Xd20+
-                    match_xd20_plus = re.match(r'^(\d*)[dD]20\s*\+\s*', front_expr, re.IGNORECASE)
+                    # 1. 匹配 Xd20+任何符号（包括+-*/）
+                    match_xd20_plus = re.match(r'^(\d*)[dD]20\s*[+\-*/]\s*', front_expr, re.IGNORECASE)
                     if match_xd20_plus:
                         # 处理 X（D20 视为 1D20）
                         x_str = match_xd20_plus.group(1)
                         x = int(x_str) if x_str else 1  # 无数字时默认为1
                         dice_20 = f"{x}D20"
-                        # 移除 Xd20+ 部分
-                        front_expr = front_expr[len(match_xd20_plus.group(0)):].strip()
+                        # 移除 Xd20 部分，保留符号和后续表达式
+                        symbol_match = re.search(r'[+\-*/]', front_expr[len(match_xd20_plus.group(1)) + (2 if x_str else 3):])
+                        if symbol_match:
+                            symbol_pos = len(match_xd20_plus.group(1)) + (2 if x_str else 3) + symbol_match.start()
+                            front_expr = front_expr[symbol_pos:].strip()
                         front_expr_str = front_expr if front_expr else None
                     else:
-                        # 2. 如果不是 Xd20+，继续其他逻辑
+                        # 2. 如果不是 Xd20+符号，继续其他逻辑
                         # 匹配纯 Xd20 或 D20
                         match_pure_xd20 = re.match(r'^(\d*)[dD]20\b', front_expr, re.IGNORECASE)
                         if match_pure_xd20:
@@ -507,6 +510,12 @@ def unity_reply(plugin_event, Proc):
                             dice_20 = f"{x}D20"
                             front_expr = front_expr[len(match_pure_xd20.group(0)):].strip()
                             front_expr_str = front_expr if front_expr else None
+                        else:
+                            # 3. 检查是否以符号开头（+/-/*///），如果是则保持原样
+                            match_symbol_start = re.match(r'^[+\-*/]', front_expr)
+                            if match_symbol_start:
+                                # 前式以符号开头，保持原样
+                                front_expr_str = front_expr
             
             # 处理挑战值的固定d20（使用解析出的 back_x_dice_value）
             back_fixed_d20 = 0
@@ -602,49 +611,79 @@ def unity_reply(plugin_event, Proc):
                         rd_d20.resInt = x_dice_value
 
             if front_expr:
-                # 技能替换
-                front_expr, front_detail = replace_skills(front_expr.replace('=', '').replace(' ', ''), skill_valueTable, tmp_pcCardRule)
-                rd_front = OlivaDiceCore.onedice.RD(front_expr, tmp_template_customDefault)
-                rd_front.roll()
-                if rd_front.resError != None:
-                    dictTValue['tRollPara'] = front_expr_str
-                    error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_front.resError, dictStrCustom, dictTValue)
-                    dictTValue['tResult'] = f"错误的出值：{error_msg}"
-                    tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
-                    replyMsg(plugin_event, tmp_reply_str.strip())
-                    return
-                # 现在总是有d20（除非m参数）
-                front_result = rd_d20.resInt + rd_front.resInt
-                base_front_str = f"{front_detail}={rd_d20.resInt}+{rd_front.resDetail}={front_result}"
-                if not rd_front.resDetail:
-                    base_front_str = f"{front_detail}={front_result}"
-                    if front_result != rd_d20.resInt:
-                        base_front_str = f"{front_detail}={rd_d20.resInt}+{rd_front.resInt}={front_result}"
-                if flag_no_default_d20:
-                    # m参数去除默认d20
-                    front_result = rd_front.resInt
-                    # 如果有详细掷骰过程，显示完整计算
-                    if rd_front.resDetail and rd_front.resDetail != str(rd_front.resInt):
-                        front_detail = f"{front_detail}={rd_front.resDetail}={rd_front.resInt}"
+                # 检查是否为符号开头的表达式（如 +5, -4, *3d6 等）
+                symbol_prefix_match = re.match(r'^([+\-*/])\s*(.*)$', front_expr)
+                if symbol_prefix_match and not flag_no_default_d20:
+                    # 符号开头的情况：将d20的结果与符号表达式结合
+                    symbol = symbol_prefix_match.group(1)
+                    expr_after_symbol = symbol_prefix_match.group(2)
+                    
+                    # 构造完整的表达式，将d20和符号表达式组合
+                    combined_expr = f"{rd_d20.resInt}{symbol}{expr_after_symbol}"
+                    
+                    # 技能替换
+                    combined_expr, front_detail = replace_skills(combined_expr.replace('=', '').replace(' ', ''), skill_valueTable, tmp_pcCardRule)
+                    rd_combined = OlivaDiceCore.onedice.RD(combined_expr, tmp_template_customDefault)
+                    rd_combined.roll()
+                    if rd_combined.resError != None:
+                        dictTValue['tRollPara'] = front_expr_str
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_combined.resError, dictStrCustom, dictTValue)
+                        dictTValue['tResult'] = f"错误的出值：{error_msg}"
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
+                        replyMsg(plugin_event, tmp_reply_str.strip())
+                        return
+                    
+                    front_result = rd_combined.resInt
+                    # 构造显示信息
+                    if rd_combined.resDetail and rd_combined.resDetail != str(rd_combined.resInt):
+                        front_detail = f"1D20{symbol}{expr_after_symbol}={rd_combined.resDetail}={front_result}"
                     else:
-                        if str(front_detail) == str(rd_front.resInt):
-                            front_detail = rd_front.resInt
-                        else:
-                            front_detail = f"{front_detail}={rd_front.resInt}"
-                elif is_x and x_modifier:
-                    # 有x修饰符，显示修正信息
-                    if rd_d20.resInt != original_d20:
-                        modifier_text = f"修正{x_modifier.upper()}{x_dice_value}"
-                        front_detail = f"1D20({original_d20}->{rd_d20.resInt},{modifier_text})+{base_front_str}"
-                    else:
-                        front_detail = f"1D20+{base_front_str}"
-                elif is_x:
-                    front_detail = f"1D20+{base_front_str}" if 1 <= rd_d20.resInt <= 20 else f"固定值({dice_20})+{base_front_str}"
-                elif s_count > 1:
-                    # 多个d20的情况
-                    front_detail = f"{d20_detail_str}+{base_front_str}"
+                        front_detail = f"1D20{symbol}{expr_after_symbol}={front_result}"
                 else:
-                    front_detail = f"{dice_20}+{base_front_str}"
+                    # 非符号开头的情况或有m参数的情况
+                    # 技能替换
+                    front_expr, front_detail = replace_skills(front_expr.replace('=', '').replace(' ', ''), skill_valueTable, tmp_pcCardRule)
+                    rd_front = OlivaDiceCore.onedice.RD(front_expr, tmp_template_customDefault)
+                    rd_front.roll()
+                    if rd_front.resError != None:
+                        dictTValue['tRollPara'] = front_expr_str
+                        error_msg = OlivaDiceCore.msgReplyModel.get_SkillCheckError(rd_front.resError, dictStrCustom, dictTValue)
+                        dictTValue['tResult'] = f"错误的出值：{error_msg}"
+                        tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(dictStrCustom['strShError'], dictTValue)
+                        replyMsg(plugin_event, tmp_reply_str.strip())
+                        return
+                    # 现在总是有d20（除非m参数）
+                    front_result = rd_d20.resInt + rd_front.resInt
+                    base_front_str = f"{front_detail}={rd_d20.resInt}+{rd_front.resDetail}={front_result}"
+                    if not rd_front.resDetail:
+                        base_front_str = f"{front_detail}={front_result}"
+                        if front_result != rd_d20.resInt:
+                            base_front_str = f"{front_detail}={rd_d20.resInt}+{rd_front.resInt}={front_result}"
+                    if flag_no_default_d20:
+                        # m参数去除默认d20
+                        front_result = rd_front.resInt
+                        # 如果有详细掷骰过程，显示完整计算
+                        if rd_front.resDetail and rd_front.resDetail != str(rd_front.resInt):
+                            front_detail = f"{front_detail}={rd_front.resDetail}={rd_front.resInt}"
+                        else:
+                            if str(front_detail) == str(rd_front.resInt):
+                                front_detail = rd_front.resInt
+                            else:
+                                front_detail = f"{front_detail}={rd_front.resInt}"
+                    elif is_x and x_modifier:
+                        # 有x修饰符，显示修正信息
+                        if rd_d20.resInt != original_d20:
+                            modifier_text = f"修正{x_modifier.upper()}{x_dice_value}"
+                            front_detail = f"1D20({original_d20}->{rd_d20.resInt},{modifier_text})+{base_front_str}"
+                        else:
+                            front_detail = f"1D20+{base_front_str}"
+                    elif is_x:
+                        front_detail = f"1D20+{base_front_str}" if 1 <= rd_d20.resInt <= 20 else f"固定值({dice_20})+{base_front_str}"
+                    elif s_count > 1:
+                        # 多个d20的情况
+                        front_detail = f"{d20_detail_str}+{base_front_str}"
+                    else:
+                        front_detail = f"{dice_20}+{base_front_str}"
             else:
                 front_result = rd_d20.resInt
                 if flag_no_default_d20:
