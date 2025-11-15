@@ -178,7 +178,7 @@ def unity_reply(plugin_event, Proc):
         if not flag_groupEnable and not flag_force_reply:
             return
         if isMatchWordStart(tmp_reast_str, ['rad','rcd'], isCommand = True):
-            is_at, at_user_id, tmp_reast_str = OlivaDiceCore.msgReply.parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
+            is_at, at_user_id, tmp_reast_str = parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin)
             if is_at:
                 if not at_user_id:
                     return
@@ -247,14 +247,14 @@ def unity_reply(plugin_event, Proc):
             tmp_skill_value = None
             difficulty = None
             # 解析难度前缀（困难/极难/大成功）
-            difficulty, tmp_reast_str = OlivaDiceCore.msgReplyModel.difficulty_analyze(tmp_reast_str)
+            difficulty, tmp_reast_str = difficulty_analyze(tmp_reast_str)
             tmp_skill_value_str = None
             # 保存表达式信息，用于多次掷骰时重新计算
             tmp_expr_info = None
             # 标记是否强制指定了技能值（直接输入数字）
             flag_force_value = False
             if tmp_reast_str:
-                op_list = OlivaDiceCore.msgReplyModel.op_list_get()
+                op_list = op_list_get()
                 # 检查是否直接以运算符开头 (如 +10, -5, *2等)
                 if tmp_reast_str[0] in op_list:
                     # 直接是表达式，没有技能名
@@ -731,3 +731,61 @@ def unity_reply(plugin_event, Proc):
                             replyMsg(plugin_event, tmp_reply_str)
             # 阻止后续插件处理,避免与原有的 .ra 命令冲突
             plugin_event.set_block()
+
+def parse_at_user(plugin_event, tmp_reast_str, valDict, flag_is_from_group_admin):
+    """
+    解析消息中的@用户并检查权限
+    返回: is_at, at_user_id, cleaned_message_str
+    """
+    flag_is_from_master = valDict['flag_is_from_master']
+    dictTValue = valDict['dictTValue']
+    dictStrCustom = valDict['dictStrCustom']
+    tmp_reast_str_para = OlivOS.messageAPI.Message_templet('old_string', tmp_reast_str)
+    at_user_id = None
+    new_tmp_reast_str_parts = []
+    is_at = False
+    
+    for part in tmp_reast_str_para.data:
+        if isinstance(part, OlivOS.messageAPI.PARA.at):
+            at_user_id = part.data['id']
+            tmp_userName01 = OlivaDiceCore.msgReplyModel.get_user_name(plugin_event, at_user_id)
+            dictTValue['tUserName01'] = tmp_userName01
+            is_at = True
+        else:
+            if isinstance(part, OlivOS.messageAPI.PARA.text):
+                new_tmp_reast_str_parts.append(part.data['text'])
+    
+    if is_at:
+        if plugin_event.platform['platform'] in ['qqGuild']:
+            # QQ频道平台直接返回解析结果，不进行权限检查
+            cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+            return is_at, at_user_id, cleaned_message
+        # 检查发送者是否为管理员或群主
+        if not (flag_is_from_group_admin or flag_is_from_master):
+            tmp_reply_str = OlivaDiceCore.msgCustomManager.formatReplySTR(
+                dictStrCustom['strAtOtherPermissionDenied'], 
+                dictTValue
+            )
+            OlivaDiceCore.msgReply.replyMsg(plugin_event, tmp_reply_str)
+            return (True, None, None)  # 权限不足
+    
+    # 返回解析结果
+    cleaned_message = ''.join(new_tmp_reast_str_parts).strip()
+    return is_at, at_user_id, cleaned_message
+
+def difficulty_analyze(res):
+    difficulty = None
+    if OlivaDiceCore.msgReply.isMatchWordStart(res, ['困难成功', '困难']):
+        difficulty = '困难'
+        res = OlivaDiceCore.msgReply.getMatchWordStartRight(res, ['困难成功', '困难']).strip()
+    elif OlivaDiceCore.msgReply.isMatchWordStart(res, ['极难成功', '极限成功', '极难', '极限']):
+        difficulty = '极难'
+        res = OlivaDiceCore.msgReply.getMatchWordStartRight(res, ['极难成功', '极限成功', '极难', '极限']).strip()
+    elif OlivaDiceCore.msgReply.isMatchWordStart(res, '大成功'):
+        difficulty = '大成功'
+        res = OlivaDiceCore.msgReply.getMatchWordStartRight(res, '大成功').strip()
+    res = res.strip()
+    return difficulty, res
+
+def op_list_get():
+    return ['+', '-', '*', '/', '^']
